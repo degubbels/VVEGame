@@ -3,11 +3,15 @@
 *
 * (c) bei Helmut Hlavacs, University of Vienna
 *
+*
+* Edit degu
 */
 
 #include "VEInclude.h"
 
 namespace ve {
+
+	const int COURSE_WIDTH = 8;
 
 	/**
 	*
@@ -50,34 +54,34 @@ namespace ve {
 			translate = pCamera->getTransform() * glm::vec4(1.0, 0.0, 0.0, 1.0); //right
 			break;
 		case GLFW_KEY_W:
-			translate = pCamera->getTransform() * glm::vec4(0.0, 0.0, 1.0, 1.0); //forward
-			translate.y = 0.0f;
+			//translate = pCamera->getTransform() * glm::vec4(0.0, 0.0, 1.0, 1.0); //forward
+			//translate.y = 0.0f;
 			break;
 		case GLFW_KEY_S:
-			translate = pCamera->getTransform() * glm::vec4(0.0, 0.0, -1.0, 1.0); //back
-			translate.y = 0.0f;
+			//translate = pCamera->getTransform() * glm::vec4(0.0, 0.0, -1.0, 1.0); //back
+			//translate.y = 0.0f;
 			break;
 		case GLFW_KEY_Q:
-			translate = glm::vec4(0.0, -1.0, 0.0, 1.0); //down
+			//translate = glm::vec4(0.0, -1.0, 0.0, 1.0); //down
 			break;
 		case GLFW_KEY_E:
-			translate = glm::vec4(0.0, 1.0, 0.0, 1.0);  //up
+			//translate = glm::vec4(0.0, 1.0, 0.0, 1.0);  //up
 			break;
 		case GLFW_KEY_LEFT:							//yaw rotation is already in parent space
-			angle = rotSpeed * (float)event.dt * -1.0f;
-			rot4 = glm::vec4(0.0, 1.0, 0.0, 1.0);
+			//angle = rotSpeed * (float)event.dt * -1.0f;
+			//rot4 = glm::vec4(0.0, 1.0, 0.0, 1.0);
 			break;
 		case GLFW_KEY_RIGHT:						//yaw rotation is already in parent space
-			angle = rotSpeed * (float)event.dt * 1.0f;
-			rot4 = glm::vec4(0.0, 1.0, 0.0, 1.0);
+			//angle = rotSpeed * (float)event.dt * 1.0f;
+			//rot4 = glm::vec4(0.0, 1.0, 0.0, 1.0);
 			break;
 		case GLFW_KEY_UP:							//pitch rotation is in cam/local space
-			angle = rotSpeed * (float)event.dt * 1.0f;			//pitch angle
-			rot4 = pCamera->getTransform() * glm::vec4(1.0, 0.0, 0.0, 1.0); //x axis from local to parent space!
+			//angle = rotSpeed * (float)event.dt * 1.0f;			//pitch angle
+			//rot4 = pCamera->getTransform() * glm::vec4(1.0, 0.0, 0.0, 1.0); //x axis from local to parent space!
 			break;
 		case GLFW_KEY_DOWN:							//pitch rotation is in cam/local space
-			angle = rotSpeed * (float)event.dt * -1.0f;		//pitch angle
-			rot4 = pCamera->getTransform() * glm::vec4(1.0, 0.0, 0.0, 1.0); //x axis from local to parent space!
+			//angle = rotSpeed * (float)event.dt * -1.0f;		//pitch angle
+			//rot4 = pCamera->getTransform() * glm::vec4(1.0, 0.0, 0.0, 1.0); //x axis from local to parent space!
 			break;
 
 		default:
@@ -98,6 +102,15 @@ namespace ve {
 		glm::mat4  rotate = glm::rotate(glm::mat4(1.0), angle, rot3);
 		pCamera->multiplyTransform( rotate );
 
+
+		// TODO: clamp to stay within course
+		glm::vec3 pos = pParent->getPosition();
+		if (pos.x > COURSE_WIDTH / 2) {
+			pParent->setPosition(glm::vec3(COURSE_WIDTH / 2, pos.y, pos.z));
+		} else if (pos.x < -COURSE_WIDTH / 2) {
+			pParent->setPosition(glm::vec3(-COURSE_WIDTH / 2, pos.y, pos.z));
+		}
+
 		return true;
 	}
 
@@ -114,6 +127,9 @@ namespace ve {
 	*
 	*/
 	bool VEEventListenerGLFW::onMouseMove(veEvent event) {
+
+		// Disable
+		return false;
 
 		if (!m_rightButtonClicked) return false;		//only do something if left mouse button is pressed
 
@@ -167,6 +183,9 @@ namespace ve {
 	*/
 	bool VEEventListenerGLFW::onMouseButton(veEvent event) {
 
+		// Disable
+		return false;
+
 		if (event.idata3 == GLFW_PRESS) {		//just pressed a mouse button
 			m_usePrevCursorPosition = false;
 			if (event.idata1 == GLFW_MOUSE_BUTTON_RIGHT)
@@ -195,6 +214,9 @@ namespace ve {
 	* 
 	*/
 	bool VEEventListenerGLFW::onMouseScroll(veEvent event) {
+
+		// Disable
+		return false;
 
 		float xoffset = event.fdata1;
 		float yoffset = event.fdata2;
