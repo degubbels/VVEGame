@@ -25,6 +25,11 @@ namespace ve {
 	const int COURSE_WIDTH = 8;
 	const float RUNNING_SPEED = 15.0f;
 
+	// The time elapsed so far
+	float time;
+
+	
+	VESceneNode *eParent;
 
 	//
 	//Zeichne das GUI
@@ -159,7 +164,25 @@ namespace ve {
 			float speed = RUNNING_SPEED;
 			glm::vec3 trans = speed * glm::vec3(translate.x, translate.y, translate.z);
 			pParent->multiplyTransform(glm::translate(glm::mat4(1.0f), (float)event.dt * trans));
+
+			spawnNotes(event);
 		};
+
+		virtual void spawnNotes(veEvent event) {
+			float newTime = time + event.dt;
+
+			if (newTime > 6.0f && time < 6.0f) {
+				VESceneNode* e1;
+				VECHECKPOINTER(e1 = getSceneManagerPointer()->loadModel("The Cube0", "media/models/test/crate0", "cube.obj"));
+				eParent->multiplyTransform(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.0f, 120.0f)));
+				eParent->addChild(e1);
+				printf("crate");
+			}
+
+
+			time = newTime;
+
+		}
 
 	public:
 		///Constructor of class EventListenerCollision
@@ -208,17 +231,16 @@ namespace ve {
 			// Groundplane
 			VESceneNode *e4;
 			VECHECKPOINTER( e4 = getSceneManagerPointer()->loadModel("The Plane", "media/models/test", "plane_t_n_s.obj",0, pScene) );
-			e4->setTransform(glm::scale(glm::mat4(1.0f), glm::vec3(COURSE_WIDTH, 1.0f, 1000.0f)));
+			e4->setTransform(glm::scale(glm::mat4(1.0f), glm::vec3(COURSE_WIDTH, 1.0f, 10000.0f)));
 
 			//VEEntity *pE4;
 			//VECHECKPOINTER( pE4 = (VEEntity*)getSceneManagerPointer()->getSceneNode("The Plane/plane_t_n_s.obj/plane/Entity_0") );
 			//pE4->setParam( glm::vec4(1000.0f, 1000.0f, 0.0f, 0.0f) );
 
-			//VESceneNode *e1,*eParent;
-			//eParent = getSceneManagerPointer()->createSceneNode("The Cube Parent", pScene, glm::mat4(1.0));
-			//VECHECKPOINTER(e1 = getSceneManagerPointer()->loadModel("The Cube0", "media/models/test/crate0", "cube.obj"));
-			//eParent->multiplyTransform(glm::translate(glm::mat4(1.0f), glm::vec3(-10.0f, 1.0f, 10.0f)));
-			//eParent->addChild(e1);
+			
+			eParent = getSceneManagerPointer()->createSceneNode("The Cube Parent", pScene, glm::mat4(1.0));
+			
+			
 
 			m_irrklangEngine->play2D("media/sounds/ophelia.mp3", true);
 		};
