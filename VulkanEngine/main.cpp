@@ -23,6 +23,7 @@ namespace ve {
 
 	// Course width
 	const int COURSE_WIDTH = 8;
+	const float RUNNING_SPEED = 15.0f;
 
 
 	//
@@ -140,7 +141,33 @@ namespace ve {
 		virtual ~EventListenerCollision() {};
 	};
 
+	class EventListenerFrame : public VEEventListener {
 	
+	protected:
+		virtual void onFrameStarted(veEvent event) {
+
+
+			// Auto move forward
+			VECamera* pCamera = getSceneManagerPointer()->getCamera();
+			VESceneNode* pParent = pCamera->getParent();
+
+			glm::vec4 translate = glm::vec4(0.0, 0.0, 0.0, 1.0);
+			translate = pCamera->getTransform() * glm::vec4(0.0, 0.0, 1.0, 1.0); //forward
+			translate.y = 0.0f;
+
+			///add the new translation vector to the previous one
+			float speed = RUNNING_SPEED;
+			glm::vec3 trans = speed * glm::vec3(translate.x, translate.y, translate.z);
+			pParent->multiplyTransform(glm::translate(glm::mat4(1.0f), (float)event.dt * trans));
+		};
+
+	public:
+		///Constructor of class EventListenerCollision
+		EventListenerFrame(std::string name) : VEEventListener(name) { };
+
+		///Destructor of class EventListenerCollision
+		virtual ~EventListenerFrame() {};
+	};
 
 	///user defined manager class, derived from VEEngine
 	class VEGame : public VEEngine {
@@ -157,6 +184,7 @@ namespace ve {
 
 			//registerEventListener(new EventListenerCollision("Collision"), { veEvent::VE_EVENT_FRAME_STARTED });
 			registerEventListener(new EventListenerGUI("GUI"), { veEvent::VE_EVENT_DRAW_OVERLAY});
+			registerEventListener(new EventListenerFrame("Frame"), { veEvent::VE_EVENT_FRAME_STARTED });
 		};
 		
 

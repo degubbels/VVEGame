@@ -103,7 +103,7 @@ namespace ve {
 		pCamera->multiplyTransform( rotate );
 
 
-		// TODO: clamp to stay within course
+		// Clamp to stay within course
 		glm::vec3 pos = pParent->getPosition();
 		if (pos.x > COURSE_WIDTH / 2) {
 			pParent->setPosition(glm::vec3(COURSE_WIDTH / 2, pos.y, pos.z));
