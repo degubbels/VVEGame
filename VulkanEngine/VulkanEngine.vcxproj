@@ -204,6 +204,7 @@
     <ClCompile Include="..\external\threadpool\ThreadPool.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="CLIntersect.cpp" />
+    <ClCompile Include="midiReader.cpp" />
     <ClCompile Include="VHFunctions.cpp" />
     <ClCompile Include="VEDocumentation.cpp" />
     <ClCompile Include="VEEngine.cpp" />

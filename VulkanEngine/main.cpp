@@ -10,6 +10,12 @@
 
 #include "VEInclude.h"
 
+#include <fstream>
+#include <vector>
+#include <iostream>
+
+using namespace std;
+
 
 
 namespace ve {
@@ -242,7 +248,7 @@ namespace ve {
 			
 			
 
-			m_irrklangEngine->play2D("media/sounds/ophelia.mp3", true);
+			m_irrklangEngine->play2D("media/sounds/songs/Austria_anthem.mid", true);
 		};
 	};
 
@@ -255,6 +261,46 @@ using namespace ve;
  * program entrypoint
  */
 int main() {
+
+	string fileName = "media\sounds\songs";
+
+	vector<char*> chunks;
+
+	char* type;
+	char* length;
+
+
+	// Open file
+	ifstream file(fileName, ios::in | ios::binary);
+
+	char buff[256];
+
+	// Read header
+	file.read(buff, 4);
+	file.read(buff, 4);
+
+	
+
+	int format; // 0, 1, 2
+	file.read(buff, 2);
+	format = atol(buff);
+	cout << format;
+	cout << "\n";
+
+	int tracks;
+	file.read(buff, 2);
+	tracks = atol(buff);
+	cout << tracks;
+	cout << "\n";
+
+	int division;
+	file.read(buff, 2);
+	division = atol(buff);
+	cout << division;
+	cout << "\n";
+
+
+	return 0;
 
 	bool debug = true;
 
