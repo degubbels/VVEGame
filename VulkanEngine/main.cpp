@@ -248,7 +248,7 @@ namespace ve {
 			
 			
 
-			m_irrklangEngine->play2D("media/sounds/songs/Austria_anthem.mid", true);
+			m_irrklangEngine->play2D("media/sounds/songs/Austria_anthem.midi", true);
 		};
 	};
 
@@ -257,48 +257,125 @@ namespace ve {
 
 using namespace ve;
 
+//#include <netinet/in.h>
+
+bool isSmallEndian() {
+	unsigned int i = 1;
+	char* c = (char*)&i;
+	if (*c)
+		return true;
+	else
+		return false;
+	return 0;
+}
+
+
+void swapByteOrder(unsigned short& us)
+{
+	us = (us >> 8) |
+		(us << 8);
+}
+
+void swapByteOrder(unsigned int& ui)
+{
+	ui = (ui >> 24) |
+		((ui << 8) & 0x00FF0000) |
+		((ui >> 8) & 0x0000FF00) |
+		(ui << 24);
+}
+
+void swapByteOrder(unsigned long long& ull)
+{
+	ull = (ull >> 56) |
+		((ull << 40) & 0x00FF000000000000) |
+		((ull << 24) & 0x0000FF0000000000) |
+		((ull << 8) & 0x000000FF00000000) |
+		((ull >> 8) & 0x00000000FF000000) |
+		((ull >> 24) & 0x0000000000FF0000) |
+		((ull >> 40) & 0x000000000000FF00) |
+		(ull << 56);
+}
+
+void correctEndian(unsigned int& ui) {
+	if (isSmallEndian)
+	{
+		swapByteOrder(ui);
+	}
+}
+
+void correctEndian(unsigned short& ui) {
+	if (isSmallEndian)
+	{
+		swapByteOrder(ui);
+	}
+}
+
 /**
  * program entrypoint
  */
 int main() {
 
-	string fileName = "media\sounds\songs";
+	string fileName = "media/sounds/songs/Austria_anthem.midi";
 
 	vector<char*> chunks;
-
-	char* type;
-	char* length;
 
 
 	// Open file
 	ifstream file(fileName, ios::in | ios::binary);
 
-	char buff[256];
-
 	// Read header
-	file.read(buff, 4);
-	file.read(buff, 4);
+	byte type[4];
+	file.read((char*)type, 4);
+	string typestr((char*)type);
+	printf("type: %s\n", type);
+	printf("type: %s\n", typestr);
 
+	unsigned int headerLength;
+	file.read((char*) &headerLength, 4);
+	correctEndian(headerLength);
+	printf("length: %i\n", headerLength);
+
+	uint16_t format; // 0, 1, 2
+	file.read((char*) &format, sizeof(format));
+	correctEndian(format);
+	printf("format: %i\n", format);
 	
+	uint16_t tracks;
+	file.read((char*) &tracks, 2);
+	correctEndian(tracks);
+	printf("tracks: %i\n", tracks);
 
-	int format; // 0, 1, 2
-	file.read(buff, 2);
-	format = atol(buff);
-	cout << format;
-	cout << "\n";
+	uint16_t division;
+	file.read((char*) &division, 2);
+	correctEndian(division);
+	printf("division: %i\n", division);
 
-	int tracks;
-	file.read(buff, 2);
-	tracks = atol(buff);
-	cout << tracks;
-	cout << "\n";
 
-	int division;
-	file.read(buff, 2);
-	division = atol(buff);
-	cout << division;
-	cout << "\n";
+	// Read chunks
+	byte chunkType[4];
+	unsigned int chunkLength[4];
+	char* chunk;
 
+	// TODO: check that numChunks does indeed match numTracks
+	for (size_t i = 0; i < tracks; i++)
+	{
+		file.read((char*)chunkType, 4);
+		string typestr((char*)type);
+
+		unsigned int chunkLength;
+		file.read((char*)&chunkLength, 4);
+		correctEndian(chunkLength);
+		printf("Chunk %i: length %i\n", i, chunkLength);
+
+		if (chunkLength < 0 || chunkLength > 8192) {
+			printf("invalid chunk length\n");
+			break;
+		}
+
+		chunk = (char*) malloc(chunkLength);
+		file.read(chunk, chunkLength);
+		chunks.push_back(chunk);
+	}
 
 	return 0;
 
