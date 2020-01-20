@@ -29,7 +29,7 @@ namespace ve {
 	float time;
 
 	
-	VESceneNode *eParent;
+	VESceneNode *notesParent;
 
 	//
 	//Zeichne das GUI
@@ -111,7 +111,7 @@ namespace ve {
 			}
 			if (g_gameLost) return;
 
-			glm::vec3 positionCube   = getSceneManagerPointer()->getSceneNode("The Cube Parent")->getPosition();
+			glm::vec3 positionCube   = getSceneManagerPointer()->getSceneNode("The notes Parent")->getPosition();
 			glm::vec3 positionCamera = getSceneManagerPointer()->getSceneNode("StandardCameraParent")->getPosition();
 
 			float distance = glm::length(positionCube - positionCamera);
@@ -153,17 +153,18 @@ namespace ve {
 
 
 			// Auto move forward
-			VECamera* pCamera = getSceneManagerPointer()->getCamera();
-			VESceneNode* pParent = pCamera->getParent();
+			// Don't actually, let the things move
+			//VECamera* pCamera = getSceneManagerPointer()->getCamera();
+			//VESceneNode* pParent = pCamera->getParent();
 
-			glm::vec4 translate = glm::vec4(0.0, 0.0, 0.0, 1.0);
-			translate = pCamera->getTransform() * glm::vec4(0.0, 0.0, 1.0, 1.0); //forward
-			translate.y = 0.0f;
+			////glm::vec4 translate = glm::vec4(0.0, 0.0, 0.0, -1.0);
+			//translate = pCamera->getTransform() * glm::vec4(0.0, 0.0, 1.0, 1.0); //forward
+			//translate.y = 0.0f;
 
-			///add the new translation vector to the previous one
+			//add the new translation vector to the previous one
 			float speed = RUNNING_SPEED;
-			glm::vec3 trans = speed * glm::vec3(translate.x, translate.y, translate.z);
-			pParent->multiplyTransform(glm::translate(glm::mat4(1.0f), (float)event.dt * trans));
+			glm::vec3 trans = speed * glm::vec3(0,-0.5, -1.0);
+			notesParent->multiplyTransform(glm::translate(glm::mat4(1.0f), (float)event.dt * trans));
 
 			spawnNotes(event);
 		};
@@ -171,11 +172,13 @@ namespace ve {
 		virtual void spawnNotes(veEvent event) {
 			float newTime = time + event.dt;
 
-			if (newTime > 6.0f && time < 6.0f) {
+			if (newTime > 0.1f && time < 0.1f) {
 				VESceneNode* e1;
 				VECHECKPOINTER(e1 = getSceneManagerPointer()->loadModel("The Cube0", "media/models/test/crate0", "cube.obj"));
-				eParent->multiplyTransform(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.0f, 120.0f)));
-				eParent->addChild(e1);
+
+				VESceneNode *note = getSceneManagerPointer()->createSceneNode("note", notesParent, glm::mat4(1.0));
+				note->multiplyTransform(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f,11.0f, 20.0f)));
+				note->addChild(e1);
 				printf("crate");
 			}
 
@@ -238,7 +241,7 @@ namespace ve {
 			//pE4->setParam( glm::vec4(1000.0f, 1000.0f, 0.0f, 0.0f) );
 
 			
-			eParent = getSceneManagerPointer()->createSceneNode("The Cube Parent", pScene, glm::mat4(1.0));
+			notesParent = getSceneManagerPointer()->createSceneNode("The notes Parent", pScene, glm::mat4(1.0));
 			
 			
 
