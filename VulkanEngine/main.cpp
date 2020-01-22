@@ -328,9 +328,9 @@ namespace ve {
 			// Read header
 			byte type[4];
 			file.read((char*)type, 4);
-			string typestr((char*)type);
+			string typestr((char*)type, 4);
 			printf("type: %s\n", type);
-			printf("type: %s\n", typestr);
+			printf("type: %s\n", typestr.c_str());
 
 			unsigned int headerLength;
 			file.read((char*)&headerLength, 4);
@@ -345,7 +345,7 @@ namespace ve {
 			if (format != 1)
 			{
 				// Invalid format
-				printf("INVALID FORMAT, only 1 is accepted")
+				printf("INVALID FORMAT, only 1 is accepted");
 				return;
 			}
 
@@ -387,110 +387,188 @@ namespace ve {
 				chunkLengths.push_back(chunkLength);
 			}
 
-			// First track
+			// Loop tracks
+			for (size_t i = 0; i < chunks.size(); i++) {
 
-			// FOR event loop
-			int i = 0;
-			bool endOfTrack = false;
-			for (size_t e = 0; e < chunkLengths[i]; e++)
-			{
-				// chunkLengths[i] is number of bytes in chunk, not number of events
+				// Loop events in track
+				bool endOfTrack = false;
+				for (size_t e = 0; e < chunkLengths[i]; e++)
+				{
+					// chunkLengths[i] is number of bytes in chunk, not number of events
 
 
-				// dtime
-				unsigned int dtime;
-				int length = getVariableLengthQuantityValue((char*)chunks[i], &dtime);
-				//printf("l: %X, dt: %X\n", length, dtime);
+					// dtime
+					unsigned int dtime;
+					int vlqlen = getVariableLengthQuantityValue((char*)chunks[i], &dtime);
+					//printf("l: %X, dt: %X\n", length, dtime);
 
-				// Next bytes
-				chunks[i] += length;
+					// Next bytes
+					chunks[i] += vlqlen;
 
-				if ((byte)chunks[i][0] == 0xFF) {
-					// META
+					// Number of bytes in events
+					unsigned int length;
 
-					// type
-					byte length;
-					printf("metatype: %X\n", (byte)(chunks[i][1]));
-					switch ((byte)chunks[i][1]) {
-						case 0x03:	// Track name
-						{
-							length = (byte)chunks[i][2];
-							
-							string name(chunks[i][3], length);
-							trackName = name;
-							printf("naem: %s\n", trackName);
+					// Event type
+					if ((byte)chunks[i][0] == 0xFF) {
+						// META
 
-							//this->trackName = 
+						// type
+						printf("metatype: %X\n", (byte)(chunks[i][1]));
+						switch ((byte)chunks[i][1]) {
+							case 0x03:	// Track name
+							{
+								length = (byte)chunks[i][2];
 
-							break;
+								/*printf("byte: %s\n", (char*)&(chunks[i][3]));*/
+								string name((char*)&(chunks[i][3]), length);
+								trackName = name;
+								printf("name: %s\n", trackName.c_str());
+
+								break;
+							}
+							case 0x58: // Time Signature
+							{
+								length = (byte)chunks[i][2];
+
+								int nn = (byte)chunks[i][3];
+								int dd = (byte)chunks[i][4];
+								int cc = (byte)chunks[i][5];
+								int bb = (byte)chunks[i][6];
+
+								// TODO: use
+
+								break;
+							}
+							case 0x51: // Tempo
+							{
+
+								length = (byte)chunks[i][2];
+
+								byte tempoBytes[3] = { chunks[i][3], chunks[i][4], chunks[i][5] };
+								uint32_t t = *((unsigned int*)tempoBytes);
+								correctEndian(t);
+
+								// Shift one byte right
+								t = t >> 8;
+								tempo = t;
+								printf("tempo: %d\n", (signed int)tempo);
+								break;
+							}
+							case 0x2F: // End of Track
+							{
+								length = (byte)chunks[i][2];
+
+								endOfTrack = true;
+							}
+							default:
+							{
+								// Skip this message
+								length = (byte)chunks[i][2];
+
+								break;
+							}
 						}
-						case 0x58: // Time Signature
-						{
-							length = (byte)chunks[i][2];
-							
-							int nn = (byte)chunks[i][3];
-							int dd = (byte)chunks[i][4];
-							int cc = (byte)chunks[i][5];
-							int bb = (byte)chunks[i][6];
+						
+						// Add bytes for event type, meta type, length
+						length += 3;
 
-							// TODO: use
-
-							break;
-						}
-						case 0x51: // Tempo
-						{
-							// TODO: Fix this shit
-
-							length = (byte)chunks[i][2];
-
-							byte tempoBytes[3] = { chunks[i][3], chunks[i][4], chunks[i][5] };
-							uint32_t t = *((unsigned int*)tempoBytes);
-							correctEndian(t);
-
-							// Shift one byte right
-							t = t >> 8;
-							tempo = t;
-							printf("tempo: %d\n", (signed int)tempo);
-						}
-						case 0x2F: // End of Track
-						{
-							length = (byte)chunks[i][2];
-							
-							endOfTrack = true;
-						}
-						default:
-						{
-							// Skip this message
-							length = (byte)chunks[i][2];
-
-							break;
-						}
 					}
-					chunks[i] += 3 + length;
+					else if ((byte)chunks[i][0] == 0xF0 ||
+						(byte)chunks[i][0] == 0xF7) {
+						// SysEx
 
+						length = (byte)chunks[i][1];
+						vlqlen = getVariableLengthQuantityValue(&(chunks[i][1]), &length);
+
+						printf("sysex, len: %d\n", length);
+
+						// Add bytes for event type, length
+						length += 1 + vlqlen;
+
+
+					}
+					else {
+						// Midi
+						//printf("midi\n");
+
+						// First four bits signify type
+						byte type = 0xF0 & (byte)chunks[i][0];
+						// Second four bits indicate midi channel
+						byte channel = 0x0F & (byte)chunks[i][0];
+						printf("midi type: %X, channel: %X\n", type, channel);
+
+						switch (type) {
+							case 0x80:	// Note Off
+							{
+								length = 3;
+								break;
+							}
+							case 0x90:	// Note On
+							{
+								length = 3;
+								break;
+							}
+							case 0xA0:	// Polyphonic pressure
+							{
+								length = 3;
+
+								// Not used
+								break;
+							}
+							case 0xB0: // Controller
+							{
+								length = 3;
+
+								// Not used
+								break;
+							}
+							case 0xc0:	// Program change
+							{
+								length = 2;
+
+								// Not used
+								break;
+							}
+							case 0xD0:	// Channel pressure
+							{
+								length = 2;
+
+								// Not used
+								break;
+							}
+							case 0xE0:	// Pitch bend
+							{
+								length = 3;
+
+								// Not used;
+								break;
+							}
+							default:
+							{
+								// Shouldn't occur
+								printf("Impossible midi type\n");
+
+								// Assume length 3
+								length += 3;
+								break;
+							}								
+						}
+
+						// event type byte already included in length
+					}
+
+					chunks[i] += length;
+
+					// End of chunk reached
+					if (endOfTrack) {
+						printf("End of track\n");
+						break;
+					}
 				}
-				else if ((byte)chunks[i][0] == 0xF0 ||
-					(byte)chunks[i][0] == 0xF7) {
-					// SysEx
 
-				}
-				else {
-					// Midi
-
-
-				}
-
-				// End of chunk reached
-				if (endOfTrack) {
-					printf("End of track");
-					break;
-				}
 			}
-			
 
-
-			// Read first chunk
-			
+			printf("End of File\n");
 
 		}
 
