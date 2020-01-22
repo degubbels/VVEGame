@@ -316,6 +316,8 @@ namespace ve {
 
 		void readFile(string fileName) {
 
+			// Only read format 1
+
 			vector<char*> chunks;
 			vector<int> chunkLengths;
 
@@ -339,6 +341,13 @@ namespace ve {
 			file.read((char*)&format, 2);
 			correctEndian(format);
 			printf("format: %i\n", format);
+
+			if (format != 1)
+			{
+				// Invalid format
+				printf("INVALID FORMAT, only 1 is accepted")
+				return;
+			}
 
 			uint16_t tracks;
 			file.read((char*)&tracks, 2);
