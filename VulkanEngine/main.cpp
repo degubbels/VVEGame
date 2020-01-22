@@ -254,11 +254,26 @@ namespace ve {
 		};
 	};
 
+	struct Note {
+		int start;
+		int duration;
+		int note;
+		int volume;
+	};
+
 
 	class Midi {
 
+		struct TempoChange
+		{
+			int atMicro;	// Time in micros at which to change
+			int newMicrosPerQuarterNote;
+		};
+
 		string trackName = "Lorem Ipsum";
-		int tempo;	// microseconds per beat
+		int microsPerQuarterNote = 500'000;	// Default 120 bpm
+		int ticksPerQuarterNote;
+		int microsPerTick;
 
 		bool isSmallEndian() {
 			unsigned int i = 1;
@@ -354,10 +369,12 @@ namespace ve {
 			correctEndian(tracks);
 			printf("tracks: %i\n", tracks);
 
+			// ticks per quarter note
 			uint16_t division;
 			file.read((char*)&division, 2);
 			correctEndian(division);
 			printf("division: %i\n", division);
+			ticksPerQuarterNote = division;
 
 
 			// Read chunks
@@ -376,8 +393,7 @@ namespace ve {
 				correctEndian(chunkLength);
 				printf("Chunk %i: length %i\n", i, chunkLength);
 
-				// At most 16 MB;
-				if (chunkLength < 0 || chunkLength > 16*(8 * (2^10)^2)) {
+				if (chunkLength < 0) {
 					printf("invalid chunk length\n");
 					break;
 				}
@@ -388,8 +404,25 @@ namespace ve {
 				chunkLengths.push_back(chunkLength);
 			}
 
+			int noteStartPerChannel[16];
+
+			// Current time since start of song in microseconds
+			int currentMicroTime;
+
+			// Calculate for default
+			microsPerTick = (microsPerQuarterNote / ticksPerQuarterNote);
+
+			queue<TempoChange> tempoChangesProto;
+			queue<TempoChange> tempoChanges;
+
 			// Loop tracks
 			for (size_t i = 0; i < chunks.size(); i++) {
+
+				// Reset time
+				currentMicroTime = 0;
+
+				// Reset tempoChanges
+				tempoChanges = tempoChangesProto;
 
 				// Loop events in track
 				bool endOfTrack = false;
@@ -398,10 +431,19 @@ namespace ve {
 					// chunkLengths[i] is number of bytes in chunk, not number of events
 
 
-					// dtime
-					unsigned int dtime;
-					int vlqlen = getVariableLengthQuantityValue((char*)chunks[i], &dtime);
-					//printf("l: %X, dt: %X\n", length, dtime);
+					// dtime in ticks
+					unsigned int dtimeTicks;
+					int vlqlen = getVariableLengthQuantityValue((char*)chunks[i], &dtimeTicks);
+					//printf("l: %X, dt: %X\n", length, dtimeTicks);
+
+					currentMicroTime += dtimeTicks * microsPerTick;
+
+					// Check that the tempo is still the same
+					if (currentMicroTime > tempoChanges.front().atMicro) {
+						// New tempo
+						microsPerTick = (tempoChanges.front().newMicrosPerQuarterNote / ticksPerQuarterNote);
+						tempoChanges.pop();
+					}
 
 					// Next bytes
 					chunks[i] += vlqlen;
@@ -427,6 +469,28 @@ namespace ve {
 
 								break;
 							}
+							case 0x51: // Tempo
+							{
+
+								length = (byte)chunks[i][2];
+
+								byte tempoBytes[3] = { chunks[i][3], chunks[i][4], chunks[i][5] };
+								uint32_t tempo = *((unsigned int*)tempoBytes);
+								correctEndian(tempo);
+
+								// Shift one byte right
+								tempo = tempo >> 8;
+								microsPerQuarterNote = tempo;
+								printf("tempo: %X\n", (signed int)microsPerQuarterNote);
+
+								// Change current tempo
+								microsPerTick = (microsPerQuarterNote / ticksPerQuarterNote);
+
+								// Record change for other tracks
+								tempoChangesProto.push({ currentMicroTime, tempo });
+
+								break;
+							}
 							case 0x58: // Time Signature
 							{
 								length = (byte)chunks[i][2];
@@ -436,23 +500,25 @@ namespace ve {
 								int cc = (byte)chunks[i][5];
 								int bb = (byte)chunks[i][6];
 
+								printf("sig: (%d/%d) with cc=%d, dd=%d\n", nn, (int)pow(2,dd), cc, bb);
+
 								// TODO: use
 
 								break;
-							}
-							case 0x51: // Tempo
+							}							
+							case 0x59:	// Key signature
 							{
-
 								length = (byte)chunks[i][2];
 
-								byte tempoBytes[3] = { chunks[i][3], chunks[i][4], chunks[i][5] };
-								uint32_t t = *((unsigned int*)tempoBytes);
-								correctEndian(t);
-
-								// Shift one byte right
-								t = t >> 8;
-								tempo = t;
-								printf("tempo: %d\n", (signed int)tempo);
+								signed int sf = (byte)chunks[i][3];
+								bool isMinor = (byte)chunks[i][4];
+								if (isMinor) {
+									printf("sf: %i, minor: true\n", sf);
+								}
+								else {
+									printf("sf: %i, minor: false\n", sf);
+								}
+								
 								break;
 							}
 							case 0x2F: // End of Track
@@ -460,6 +526,8 @@ namespace ve {
 								length = (byte)chunks[i][2];
 
 								endOfTrack = true;
+
+								break;
 							}
 							default:
 							{
@@ -496,12 +564,13 @@ namespace ve {
 						byte type = 0xF0 & (byte)chunks[i][0];
 						// Second four bits indicate midi channel
 						byte channel = 0x0F & (byte)chunks[i][0];
-						printf("midi type: %X, channel: %X\n", type, channel);
+						//printf("midi type: %X, channel: %X\n", type, channel);
 
 						switch (type) {
 							case 0x80:	// Note Off
 							{
 								length = 3;
+								Note n = {3, 0, 2, 6};
 								break;
 							}
 							case 0x90:	// Note On
