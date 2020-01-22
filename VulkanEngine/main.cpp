@@ -22,20 +22,27 @@ using namespace std;
 
 namespace ve {
 
+	struct Note {
+		int start;
+		int duration;
+		int note;
+		int volume;
+	};
 
-	uint32_t g_score = 0;				//derzeitiger Punktestand
-	double g_time = 30.0;				//zeit die noch übrig ist
+	// Queue of notes per channel
+	vector<queue<Note>> notes;
+
+	// The time elapsed so far (in microseconds)
+	int time;
+
 	bool g_gameLost = false;			//true... das Spiel wurde verloren
 	bool g_restart = false;			//true...das Spiel soll neu gestartet werden
 
 
 	// Course width
 	const int COURSE_WIDTH = 8;
-	const float RUNNING_SPEED = 15.0f;
-
-	// The time elapsed so far
-	float time;
-
+	const float RUNNING_SPEED = 10.0f;
+	const float NOTE_Z_OFFSET = 20.0f;
 	
 	VESceneNode *notesParent;
 
@@ -111,8 +118,7 @@ namespace ve {
 			if (g_restart) {
 				g_gameLost = false;
 				g_restart = false;
-				g_time = 30;
-				g_score = 0;
+
 				getSceneManagerPointer()->getSceneNode("The Cube Parent")->setPosition(glm::vec3(d(e), 1.0f, d(e)));
 				getEnginePointer()->m_irrklangEngine->play2D("media/sounds/ophelia.mp3", true);
 				return;
@@ -124,12 +130,12 @@ namespace ve {
 
 			float distance = glm::length(positionCube - positionCamera);
 			if (distance < 1) {
-				g_score++;
+				//g_score++;
 				getEnginePointer()->m_irrklangEngine->play2D("media/sounds/explosion.wav", false);
-				if (g_score % 10 == 0) {
-					g_time = 30;
-					getEnginePointer()->m_irrklangEngine->play2D("media/sounds/bell.wav", false);
-				}
+				//if (g_score % 10 == 0) {
+				//	//g_time = 30;
+				//	getEnginePointer()->m_irrklangEngine->play2D("media/sounds/bell.wav", false);
+				//}
 
 				VESceneNode *eParent = getSceneManagerPointer()->getSceneNode("The Cube Parent");
 				eParent->setPosition(glm::vec3(d(e), 1.0f, d(e)));
@@ -138,12 +144,11 @@ namespace ve {
 				VECHECKPOINTER(getSceneManagerPointer()->loadModel("The Cube"+ std::to_string(++cubeid)  , "media/models/test/crate0", "cube.obj", 0, eParent) );
 			}
 
-			g_time -= event.dt;
-			if (g_time <= 0) {
-				g_gameLost = true;
-				getEnginePointer()->m_irrklangEngine->removeAllSoundSources();
-				getEnginePointer()->m_irrklangEngine->play2D("media/sounds/gameover.wav", false);
-			}
+			//if (g_time <= 0) {
+			//	g_gameLost = true;
+			//	getEnginePointer()->m_irrklangEngine->removeAllSoundSources();
+			//	getEnginePointer()->m_irrklangEngine->play2D("media/sounds/gameover.wav", false);
+			//}
 		};
 
 	public:
@@ -159,35 +164,41 @@ namespace ve {
 	protected:
 		virtual void onFrameStarted(veEvent event) {
 
-
-			// Auto move forward
-			// Don't actually, let the things move
-			//VECamera* pCamera = getSceneManagerPointer()->getCamera();
-			//VESceneNode* pParent = pCamera->getParent();
-
-			////glm::vec4 translate = glm::vec4(0.0, 0.0, 0.0, -1.0);
-			//translate = pCamera->getTransform() * glm::vec4(0.0, 0.0, 1.0, 1.0); //forward
-			//translate.y = 0.0f;
-
-			//add the new translation vector to the previous one
+			// Move notes backward
 			float speed = RUNNING_SPEED;
-			glm::vec3 trans = speed * glm::vec3(0,-0.5, -1.0);
+			glm::vec3 trans = speed * glm::vec3(0, 0, -1.0);
 			notesParent->multiplyTransform(glm::translate(glm::mat4(1.0f), (float)event.dt * trans));
 
 			spawnNotes(event);
 		};
 
 		virtual void spawnNotes(veEvent event) {
-			float newTime = time + event.dt;
+			int newTime = time + (event.dt * 1'000'000);
 
-			if (newTime > 0.1f && time < 0.1f) {
-				VESceneNode* e1;
-				VECHECKPOINTER(e1 = getSceneManagerPointer()->loadModel("The Cube0", "media/models/test/crate0", "cube.obj"));
+			// Check all midi channels
+			for (size_t i = 0; i < 16; i++) {
+				
+				while (!notes[i].empty()
+					&& time > notes[i].front().start) {
 
-				VESceneNode *note = getSceneManagerPointer()->createSceneNode("note", notesParent, glm::mat4(1.0));
-				note->multiplyTransform(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f,11.0f, 20.0f)));
-				note->addChild(e1);
-				printf("crate");
+					Note note = notes[i].front();
+					notes[i].pop();
+
+					// middle C = 60
+					float x = (float)(note.note - 60) / 4.0f;
+
+					double distance = (((double)note.start / (double)1'000'000) * RUNNING_SPEED) + NOTE_Z_OFFSET;
+
+					string cubeName = "cube_channel_" + to_string(i) + "_note_" + to_string(note.note) + "_at_" + to_string(note.start);
+					string nodeName = "note_node_channel_" + to_string(i) + "_note_" + to_string(note.note) + "_at_" + to_string(note.start);
+
+					VESceneNode* e1;
+					VECHECKPOINTER(e1 = getSceneManagerPointer()->loadModel(cubeName, "media/models/test/crate0", "cube.obj"));
+
+					VESceneNode* noteNode = getSceneManagerPointer()->createSceneNode(nodeName, notesParent, glm::mat4(1.0));
+					noteNode->multiplyTransform(glm::translate(glm::mat4(1.0f), glm::vec3(x, 2+i, distance)));
+					noteNode->addChild(e1);
+				}
 			}
 
 
@@ -244,10 +255,6 @@ namespace ve {
 			VECHECKPOINTER( e4 = getSceneManagerPointer()->loadModel("The Plane", "media/models/test", "plane_t_n_s.obj",0, pScene) );
 			e4->setTransform(glm::scale(glm::mat4(1.0f), glm::vec3(COURSE_WIDTH, 1.0f, 10000.0f)));
 
-			//VEEntity *pE4;
-			//VECHECKPOINTER( pE4 = (VEEntity*)getSceneManagerPointer()->getSceneNode("The Plane/plane_t_n_s.obj/plane/Entity_0") );
-			//pE4->setParam( glm::vec4(1000.0f, 1000.0f, 0.0f, 0.0f) );
-
 			
 			notesParent = getSceneManagerPointer()->createSceneNode("The notes Parent", pScene, glm::mat4(1.0));
 			
@@ -255,13 +262,6 @@ namespace ve {
 
 			m_irrklangEngine->play2D("media/sounds/songs/Austria_anthem.midi", true);
 		};
-	};
-
-	struct Note {
-		int start;
-		int duration;
-		int note;
-		int volume;
 	};
 
 
@@ -272,9 +272,6 @@ namespace ve {
 			int atMicro;	// Time in micros at which to change
 			int newMicrosPerQuarterNote;
 		};
-
-		// Queue of notes per channel
-		vector<queue<Note>> notes;
 
 		string trackName = "Lorem Ipsum";
 		int microsPerQuarterNote = 500'000;	// Default 120 bpm
@@ -757,14 +754,14 @@ int main() {
 	
 	string fileName = "media/sounds/songs/SuperMario64-Medley.mid";
 
-	Midi read;
-	read.readFile(fileName);
 
-	return 0;
 
 	bool debug = true;
 
 	VEGame mve(debug);	//enable or disable debugging (=callback, validation layers)
+
+	Midi read;
+	read.readFile(fileName);
 
 	mve.initEngine();
 	mve.loadLevel(1);
