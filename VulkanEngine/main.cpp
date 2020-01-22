@@ -492,7 +492,7 @@ namespace ve {
 								// Shift one byte right
 								tempo = tempo >> 8;
 								microsPerQuarterNote = tempo;
-								printf("tempo: %X\n", (int)microsPerQuarterNote);
+								//printf("tempo: %X\n", (int)microsPerQuarterNote);
 
 								// Change current tempo
 								microsPerTick = (microsPerQuarterNote / ticksPerQuarterNote);
@@ -599,7 +599,7 @@ namespace ve {
 
 								// get note
 								unsigned int n = (byte)chunks[i][1];
-								printf("note %d on\n", n);
+								
 								// Velocity ignored
 
 								// Register started note
@@ -620,8 +620,15 @@ namespace ve {
 								length = 3;
 
 								byte controller = (byte)chunks[i][1];
-								byte value = (byte)chunks[i][1];
-								// Controller 7 is channel volume
+								byte value = (byte)chunks[i][2];
+
+								if ((int)controller == 7) {
+									// Controller 7 is channel volume
+
+									printf("volume: %d\n", (int)value);
+									currentVolume = (int)value;
+								}
+								
 								break;
 							}
 							case 0xc0:	// Program change
