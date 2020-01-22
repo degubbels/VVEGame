@@ -376,7 +376,8 @@ namespace ve {
 				correctEndian(chunkLength);
 				printf("Chunk %i: length %i\n", i, chunkLength);
 
-				if (chunkLength < 0 || chunkLength > 8192) {
+				// At most 16 MB;
+				if (chunkLength < 0 || chunkLength > 16*(8 * (2^10)^2)) {
 					printf("invalid chunk length\n");
 					break;
 				}
@@ -519,7 +520,9 @@ namespace ve {
 							{
 								length = 3;
 
-								// Not used
+								byte controller = (byte)chunks[i][1];
+								byte value = (byte)chunks[i][1];
+								// Controller 7 is channel volume
 								break;
 							}
 							case 0xc0:	// Program change
@@ -643,7 +646,7 @@ using namespace ve;
  */
 int main() {
 	
-	string fileName = "media/sounds/songs/emptytown.midi";
+	string fileName = "media/sounds/songs/SuperMario64-Medley.mid";
 
 	Midi read;
 	read.readFile(fileName);
