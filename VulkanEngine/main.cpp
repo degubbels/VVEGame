@@ -270,6 +270,9 @@ namespace ve {
 			int newMicrosPerQuarterNote;
 		};
 
+		// Queue of notes per channel
+		vector<queue<Note>> notes;
+
 		string trackName = "Lorem Ipsum";
 		int microsPerQuarterNote = 500'000;	// Default 120 bpm
 		int ticksPerQuarterNote;
@@ -404,16 +407,22 @@ namespace ve {
 				chunkLengths.push_back(chunkLength);
 			}
 
-			int noteStartPerChannel[16];
-
 			// Current time since start of song in microseconds
 			int currentMicroTime;
+			int currentVolume = 63;		// Volume 0-127
 
 			// Calculate for default
 			microsPerTick = (microsPerQuarterNote / ticksPerQuarterNote);
 
-			queue<TempoChange> tempoChangesProto;
-			queue<TempoChange> tempoChanges;
+			// Changes in the tempo by point of start
+			queue<TempoChange> tempoChangesProto = *(new queue<TempoChange>());;
+			queue<TempoChange> tempoChanges = *(new queue<TempoChange>());
+
+			notes.resize(16);
+
+			// Track channel vector<queue<Note>>
+			// vector of currently sounding notes per channels
+			vector<vector<Note>> startedNotes(chunks.size(), vector<Note>(128));
 
 			// Loop tracks
 			for (size_t i = 0; i < chunks.size(); i++) {
@@ -439,11 +448,13 @@ namespace ve {
 					currentMicroTime += dtimeTicks * microsPerTick;
 
 					// Check that the tempo is still the same
-					if (currentMicroTime > tempoChanges.front().atMicro) {
+					while (!tempoChanges.empty() 
+						&& currentMicroTime > tempoChanges.front().atMicro) {
 						// New tempo
 						microsPerTick = (tempoChanges.front().newMicrosPerQuarterNote / ticksPerQuarterNote);
 						tempoChanges.pop();
 					}
+					
 
 					// Next bytes
 					chunks[i] += vlqlen;
@@ -481,13 +492,13 @@ namespace ve {
 								// Shift one byte right
 								tempo = tempo >> 8;
 								microsPerQuarterNote = tempo;
-								printf("tempo: %X\n", (signed int)microsPerQuarterNote);
+								printf("tempo: %X\n", (int)microsPerQuarterNote);
 
 								// Change current tempo
 								microsPerTick = (microsPerQuarterNote / ticksPerQuarterNote);
 
 								// Record change for other tracks
-								tempoChangesProto.push({ currentMicroTime, tempo });
+								tempoChangesProto.push({ currentMicroTime, (int)tempo });
 
 								break;
 							}
@@ -570,12 +581,31 @@ namespace ve {
 							case 0x80:	// Note Off
 							{
 								length = 3;
-								Note n = {3, 0, 2, 6};
+
+								// Get note
+								unsigned int n = (byte)chunks[i][1];
+
+								Note note = startedNotes[channel][n];
+								note.duration = currentMicroTime - note.start;
+
+								// Put into notes on this channel
+								notes[channel].push(note);
+								
 								break;
 							}
 							case 0x90:	// Note On
 							{
 								length = 3;
+
+								// get note
+								unsigned int n = (byte)chunks[i][1];
+								printf("note %d on\n", n);
+								// Velocity ignored
+
+								// Register started note
+								Note note = { currentMicroTime, 0, n, currentVolume };
+								startedNotes[channel][n] = note;
+
 								break;
 							}
 							case 0xA0:	// Polyphonic pressure
