@@ -5,11 +5,11 @@
 
 namespace ve {
 
-	class MidiReader {
+	class Midi {
 
 	public:
-		MidiReader() {};
-		~MidiReader() {};
+		Midi() {};
+		~Midi() {};
 
 		void readFile(std::string fileName);
 	};

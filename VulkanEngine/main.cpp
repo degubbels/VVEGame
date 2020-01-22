@@ -255,7 +255,10 @@ namespace ve {
 	};
 
 
-	class MidiReader {
+	class Midi {
+
+		string trackName = "Lorem Ipsum";
+		int tempo;	// microseconds per beat
 
 		bool isSmallEndian() {
 			unsigned int i = 1;
@@ -309,11 +312,12 @@ namespace ve {
 		}
 
 	public:
-		MidiReader() {};
+		Midi() {};
 
 		void readFile(string fileName) {
 
 			vector<char*> chunks;
+			vector<int> chunkLengths;
 
 
 			// Open file
@@ -371,13 +375,174 @@ namespace ve {
 				chunk = (char*)malloc(chunkLength);
 				file.read(chunk, chunkLength);
 				chunks.push_back(chunk);
+				chunkLengths.push_back(chunkLength);
 			}
 
-			int dtime;
-			// Read first chunk
-			if (((chunks[0][0] >> 3) & 0x01) == 0) {
-				// Variable length 2 bytes
+			// First track
+
+			// FOR event loop
+			int i = 0;
+			bool endOfTrack = false;
+			for (size_t e = 0; e < chunkLengths[i]; e++)
+			{
+				// chunkLengths[i] is number of bytes in chunk, not number of events
+
+
+				// dtime
+				unsigned int dtime;
+				int length = getVariableLengthQuantityValue((char*)chunks[i], &dtime);
+				//printf("l: %X, dt: %X\n", length, dtime);
+
+				// Next bytes
+				chunks[i] += length;
+
+				if ((byte)chunks[i][0] == 0xFF) {
+					// META
+
+					// type
+					byte length;
+					printf("metatype: %X\n", (byte)(chunks[i][1]));
+					switch ((byte)chunks[i][1]) {
+						case 0x03:	// Track name
+						{
+							length = (byte)chunks[i][2];
+							
+							string name(chunks[i][3], length);
+							trackName = name;
+							printf("naem: %s\n", trackName);
+
+							//this->trackName = 
+
+							break;
+						}
+						case 0x58: // Time Signature
+						{
+							length = (byte)chunks[i][2];
+							
+							int nn = (byte)chunks[i][3];
+							int dd = (byte)chunks[i][4];
+							int cc = (byte)chunks[i][5];
+							int bb = (byte)chunks[i][6];
+
+							// TODO: use
+
+							break;
+						}
+						case 0x51: // Tempo
+						{
+							// TODO: Fix this shit
+
+							length = (byte)chunks[i][2];
+
+							byte tempoBytes[3] = { chunks[i][3], chunks[i][4], chunks[i][5] };
+							uint32_t t = *((unsigned int*)tempoBytes);
+							correctEndian(t);
+
+							// Shift one byte right
+							t = t >> 8;
+							tempo = t;
+							printf("tempo: %d\n", (signed int)tempo);
+						}
+						case 0x2F: // End of Track
+						{
+							length = (byte)chunks[i][2];
+							
+							endOfTrack = true;
+						}
+						default:
+						{
+							// Skip this message
+							length = (byte)chunks[i][2];
+
+							break;
+						}
+					}
+					chunks[i] += 3 + length;
+
+				}
+				else if ((byte)chunks[i][0] == 0xF0 ||
+					(byte)chunks[i][0] == 0xF7) {
+					// SysEx
+
+				}
+				else {
+					// Midi
+
+
+				}
+
+				// End of chunk reached
+				if (endOfTrack) {
+					printf("End of track");
+					break;
+				}
 			}
+			
+
+
+			// Read first chunk
+			
+
+		}
+
+
+		// Quantity of 1-4 bytes
+		int getVariableLengthQuantityLength(char* q) {
+			
+			int i;
+
+			// Reverse, as midi is big-endian
+			for (i = 0; i < 4; i++) {
+
+				uint8_t byt = q[i];
+
+				// 7th not bit set -> this was the last byte
+				if (byt < 0b1000'0000)
+				{
+
+					break;
+				}
+			}
+
+			// To count
+			i += 1;
+
+			return i;
+		}
+
+		// Quantity of 1-4 bytes
+		/**
+		 * Returns length
+		 */
+		int getVariableLengthQuantityValue(char* q, unsigned int *out) {
+
+
+			int i;
+			unsigned int value = 0;
+
+			// Reverse, as midi is big-endian
+			for (i = 0; i < 4; i++) {
+
+				value = value * 128;
+
+				uint8_t byt = q[i];
+
+				value += (byt & ~0b1000'0000);
+
+				// 7th not bit set -> this was the last byte
+				if (byt < 0b1000'0000)
+				{
+
+					break;
+				}
+			}
+			
+			*out = value;
+
+			// To count
+			i += 1;
+
+			return i;
 		}
 	};
 
@@ -393,7 +558,7 @@ int main() {
 	
 	string fileName = "media/sounds/songs/emptytown.midi";
 
-	MidiReader read;
+	Midi read;
 	read.readFile(fileName);
 
 	return 0;
