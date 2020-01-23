@@ -29,6 +29,8 @@ namespace ve {
 		int volume;
 	};
 
+	string song = "Tetris";
+
 	// Queue of notes per channel
 	vector<queue<Note>> notes;
 
@@ -38,11 +40,15 @@ namespace ve {
 	bool g_gameLost = false;			//true... das Spiel wurde verloren
 	bool g_restart = false;			//true...das Spiel soll neu gestartet werden
 
+	VEMesh* pMesh;
+	VEMaterial* pMat;
 
 	// Course width
 	const int COURSE_WIDTH = 8;
 	const float RUNNING_SPEED = 10.0f;
-	const float NOTE_Z_OFFSET = 20.0f;
+	const float NOTE_Z_OFFSET = 9.0f;
+	const float NOTE_Y_OFFSET = 1.0f;
+	const int TIME_OFFSET = -300'000;
 	
 	VESceneNode *notesParent;
 
@@ -179,7 +185,7 @@ namespace ve {
 			for (size_t i = 0; i < 16; i++) {
 				
 				while (!notes[i].empty()
-					&& time > notes[i].front().start) {
+					&& time > (notes[i].front().start) + TIME_OFFSET) {
 
 					Note note = notes[i].front();
 					notes[i].pop();
@@ -188,16 +194,22 @@ namespace ve {
 					float x = (float)(note.note - 60) / 4.0f;
 
 					double distance = (((double)note.start / (double)1'000'000) * RUNNING_SPEED) + NOTE_Z_OFFSET;
+					double length = (((double)note.duration / (double)1'000'000) * RUNNING_SPEED);
+					distance += (length - 1) / 2;
 
 					string cubeName = "cube_channel_" + to_string(i) + "_note_" + to_string(note.note) + "_at_" + to_string(note.start);
 					string nodeName = "note_node_channel_" + to_string(i) + "_note_" + to_string(note.note) + "_at_" + to_string(note.start);
 
-					VESceneNode* e1;
-					VECHECKPOINTER(e1 = getSceneManagerPointer()->loadModel(cubeName, "media/models/test/crate0", "cube.obj"));
+					
+					//VECHECKPOINTER(e1 = getSceneManagerPointer()->loadModel(cubeName, "media/models/test/crate0", "cube.obj"));
+					
 
 					VESceneNode* noteNode = getSceneManagerPointer()->createSceneNode(nodeName, notesParent, glm::mat4(1.0));
-					noteNode->multiplyTransform(glm::translate(glm::mat4(1.0f), glm::vec3(x, 2+i, distance)));
-					noteNode->addChild(e1);
+					noteNode->multiplyTransform(glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, length)));
+					noteNode->multiplyTransform(glm::translate(glm::mat4(1.0f), glm::vec3(x, i + NOTE_Y_OFFSET, distance)));					
+
+					VESceneNode* e1;
+					VECHECKPOINTER(e1 = getSceneManagerPointer()->createEntity(cubeName, pMesh, pMat, noteNode));
 				}
 			}
 
@@ -244,6 +256,75 @@ namespace ve {
 	
 			//scene models
 
+			
+			vector<vh::vhVertex> vertices;
+
+			for (size_t i = -1; i <= 1; i+=2) {
+				for (size_t j = -1; j <= 1; j+=2) {
+					for (size_t k = -1; k <= 1; k+=2) {
+
+						vh::vhVertex v;
+						v.pos = glm::vec3(i, j, k);
+						v.normal = glm::vec3(i, j, k);
+						v.tangent = glm::vec3(0, 0, 0);
+						v.texCoord = glm::vec2(0, 0);
+						vertices.push_back(v);
+					}
+				}
+			}
+			vh::vhVertex v;
+			v.pos = glm::vec3(-1.0, -1.0, -1.0);
+			v.normal = glm::vec3(-1.0, 0.0, 0.0);
+			v.tangent = glm::vec3(0.0, 0.0, 1.0);
+			v.texCoord = glm::vec2(0, 0);
+			vertices.push_back(v);
+
+			v.pos = glm::vec3(-1.0, -1.0, 1.0);
+			v.normal = glm::vec3(-1.0, 0.0, 0.0);
+			v.tangent = glm::vec3(0.0, 0.0, -1.0);
+			vertices.push_back(v);
+
+			v.pos = glm::vec3(-1.0, 1.0, -1.0);
+			v.normal = glm::vec3(-1.0, 0.0, 0.0);
+			v.tangent = glm::vec3(0.0, 0.0, 1.0);
+			vertices.push_back(v);
+
+			v.pos = glm::vec3(-1.0, 1.0, 1.0);
+			v.normal = glm::vec3(-1.0, 0.0, 0.0);
+			v.tangent = glm::vec3(0.0, 0.0, -1.0);
+			vertices.push_back(v);
+
+			v.pos = glm::vec3(1.0, -1.0, -1.0);
+			v.normal = glm::vec3(1.0, 0.0, 0.0);
+			v.tangent = glm::vec3(0.0, 0.0, 1.0);
+			vertices.push_back(v);
+
+			v.pos = glm::vec3(1.0, -1.0, 1.0);
+			v.normal = glm::vec3(1.0, 0.0, 0.0);
+			v.tangent = glm::vec3(0.0, 0.0, -1.0);
+			vertices.push_back(v);
+
+			v.pos = glm::vec3(1.0, 1.0, -1.0);
+			v.normal = glm::vec3(1.0, 0.0, 0.0);
+			v.tangent = glm::vec3(0.0, 0.0, 1.0);
+			vertices.push_back(v);
+
+			v.pos = glm::vec3(1.0, 1.0, 1.0);
+			v.normal = glm::vec3(1.0, 0.0, 0.0);
+			v.tangent = glm::vec3(0.0, 0.0, -1.0);
+			vertices.push_back(v);
+
+			vector<unsigned int> indices = {
+				0,1,2,	1,2,3,	// Left
+				4,5,6,	5,6,7,	// Right
+				0,4,6,	0,6,2,	// Back
+				1,5,7,	1,7,3,	// Front
+				0,1,4,	1,4,5,	// Bottom
+				2,3,6,	3,6,7,  // Top
+			};
+
+			VEMesh mesh("simpleCube", vertices, indices);
+
 			// Skybox
 			VESceneNode *sp1;
 			VECHECKPOINTER( sp1 = getSceneManagerPointer()->createSkybox("The Sky", "media/models/test/sky/cloudy",
@@ -257,10 +338,17 @@ namespace ve {
 
 			
 			notesParent = getSceneManagerPointer()->createSceneNode("The notes Parent", pScene, glm::mat4(1.0));
-			
+			//
+			vector<VEMesh*> meshes;
+			vector<VEMaterial*> mats;
+
+			getSceneManagerPointer()->loadAssets("media/models/test/crate0/", "cube.obj", NULL, meshes, mats);
+
+			pMesh = meshes[0];
+			pMat = mats[0];
 			
 
-			m_irrklangEngine->play2D("media/sounds/songs/Austria_anthem.midi", true);
+			m_irrklangEngine->play2D(("media/sounds/songs/"+song+".wav").c_str(), false);
 		};
 	};
 
@@ -491,6 +579,11 @@ namespace ve {
 
 								// Shift one byte right
 								tempo = tempo >> 8;
+
+								// Multiply tempo (seems to be necessary, but tempochanges still fuck up
+								// Possibly different tempos per channel..
+								tempo *= (1000.0/1024.0);
+
 								microsPerQuarterNote = tempo;
 								//printf("tempo: %X\n", (int)microsPerQuarterNote);
 
@@ -752,7 +845,7 @@ using namespace ve;
  */
 int main() {
 	
-	string fileName = "media/sounds/songs/SuperMario64-Medley.mid";
+	string fileName = "media/sounds/songs/"+song+".mid";
 
 
 

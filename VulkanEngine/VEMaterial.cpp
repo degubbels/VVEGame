@@ -120,6 +120,7 @@ namespace ve {
 		VECHECKRESULT( vh::vhBufCreateIndexBuffer(	getRendererPointer()->getDevice(), getRendererPointer()->getVmaAllocator(),
 													getRendererPointer()->getGraphicsQueue(), getRendererPointer()->getCommandPool(),
 													indices, &m_indexBuffer, &m_indexBufferAllocation));
+		true;
 	}
 
 
