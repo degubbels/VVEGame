@@ -29,7 +29,7 @@ namespace ve {
 		int volume;
 	};
 
-	string song = "Tetris";
+	string song = "mario";
 
 	// Queue of notes per channel
 	vector<queue<Note>> notes;
@@ -49,6 +49,7 @@ namespace ve {
 	const float NOTE_Z_OFFSET = 9.0f;
 	const float NOTE_Y_OFFSET = 1.0f;
 	const int TIME_OFFSET = -300'000;
+	const int SPEED_CORRECTION = 1032;
 	
 	VESceneNode *notesParent;
 
@@ -582,7 +583,7 @@ namespace ve {
 
 								// Multiply tempo (seems to be necessary, but tempochanges still fuck up
 								// Possibly different tempos per channel..
-								tempo *= (1000.0/1024.0);
+								tempo *= (1000.0/SPEED_CORRECTION);
 
 								microsPerQuarterNote = tempo;
 								//printf("tempo: %X\n", (int)microsPerQuarterNote);
@@ -650,7 +651,7 @@ namespace ve {
 						(byte)chunks[i][0] == 0xF7) {
 						// SysEx
 
-						length = (byte)chunks[i][1];
+						//length = (byte)chunks[i][1];
 						vlqlen = getVariableLengthQuantityValue(&(chunks[i][1]), &length);
 
 						printf("sysex, len: %d\n", length);
@@ -748,7 +749,9 @@ namespace ve {
 							default:
 							{
 								// Shouldn't occur
-								printf("Impossible midi type\n");
+								printf("Impossible midi type: %X\n", type);
+
+								throw ERROR_ABANDONED_WAIT_0;
 
 								// Assume length 3
 								length += 3;
