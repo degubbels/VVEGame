@@ -11,7 +11,7 @@
 
 namespace ve {
 
-	const int COURSE_WIDTH = 8;
+	const int COURSE_WIDTH = 14.0;
 
 	/**
 	*
