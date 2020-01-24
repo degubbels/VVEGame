@@ -46,17 +46,18 @@ namespace ve {
 	const float COURSE_WIDTH = 14.0;
 	const float RUNNING_SPEED = 10.0f;
 	const float NOTE_Z_OFFSET = 12.0f;
-	const float NOTE_Y_OFFSET = 1;//-1.0f;
+	const float NOTE_Y_OFFSET = -1.0f;
 	const int TIME_OFFSET = -300'000;
 	const int SPEED_CORRECTION = 1032;
 
 	// Player width for collision detection purposes
 	const float PLAYER_SIZE = 0.15f;
-	const float PLAYER_HEIGHT = 1.8f;
+	const float PLAYER_HEIGHT = 0.7f;
+	const float PLAYER_HEIGHT_OFFSET = -0.3;
 	
 	const float NOTE_SIZE = 0.7f;
 
-	const float DOWN_MOVEMENT_QUOTIENT = 0;//1.0f;
+	const float DOWN_MOVEMENT_QUOTIENT = 1.0f;
 	
 	VESceneNode *notesParent;
 
@@ -151,13 +152,17 @@ namespace ve {
 				// Detect collision
 				if ( abs(camPos.x - notePos.x) < (0.5*NOTE_SIZE + PLAYER_SIZE) ) {	// X-axis collide
 
-					if ( abs(camPos.y - notePos.y) < (0.5*NOTE_SIZE + PLAYER_HEIGHT) ) {	// Y-axis collide
+					if ( abs((camPos.y + PLAYER_HEIGHT_OFFSET) - notePos.y) < (0.5*NOTE_SIZE + PLAYER_HEIGHT) ) {	// Y-axis collide
 
 						if ( abs(camPos.z - notePos.z) < (0.5*noteLength + PLAYER_SIZE) ) {		// Z-axis collide
 
 							getEnginePointer()->m_irrklangEngine->play2D("media/sounds/explosion.wav", false);
 						}
 					}
+				}
+
+				if ( notePos.y < -5.0 ) {
+					notesParent->removeChild(notesParent->getChildrenList().at(i));
 				}
 			}
 
