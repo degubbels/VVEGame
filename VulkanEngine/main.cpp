@@ -46,7 +46,7 @@ namespace ve {
 	const float COURSE_WIDTH = 14.0;
 	const float RUNNING_SPEED = 10.0f;
 	const float NOTE_Z_OFFSET = 12.0f;
-	const float NOTE_Y_OFFSET = -1.0f;
+	const float NOTE_Y_OFFSET = 1.0f;//-1.0f;
 	const int TIME_OFFSET = -300'000;
 	const int SPEED_CORRECTION = 1032;
 
@@ -57,7 +57,7 @@ namespace ve {
 	
 	const float NOTE_SIZE = 0.7f;
 
-	const float DOWN_MOVEMENT_QUOTIENT = 1.0f;
+	const float DOWN_MOVEMENT_QUOTIENT = 0.02;//1.0f;
 	
 	VESceneNode *notesParent;
 
@@ -118,6 +118,25 @@ namespace ve {
 		virtual ~EventListenerGUI() {};
 	};
 
+	class EventListenerPostProcess : public VEEventListener {
+	protected:
+		
+		/**
+		*	Extra render step for glow effect
+		*/
+		virtual void onDrawOverlay(veEvent event) {
+
+			
+		}
+
+	public:
+		///Constructor of class EventListenerGUI
+		EventListenerPostProcess(std::string name) : VEEventListener(name) { };
+
+		///Destructor of class EventListenerGUI
+		virtual ~EventListenerPostProcess() {};
+	};
+
 
 	static std::default_random_engine e{ 12345 };					//Für Zufallszahlen
 	static std::uniform_real_distribution<> d{ -10.0f, 10.0f };		//Für Zufallszahlen
@@ -133,8 +152,6 @@ namespace ve {
 			if (g_gameLost) return;
 
 			glm::vec3 camPos = getSceneManagerPointer()->getSceneNode("StandardCameraParent")->getPosition();
-
-			printf("num notes: %d\n", notesParent->getChildrenList().size());
 
 			for (size_t i = 0; i < notesParent->getChildrenList().size(); i++) {
 
@@ -208,7 +225,7 @@ namespace ve {
 			// Move notes backward
 			float speed = RUNNING_SPEED;
 			glm::vec3 trans = speed * glm::vec3(0, -DOWN_MOVEMENT_QUOTIENT, -1.0);
-			notesParent->multiplyTransform(glm::translate(glm::mat4(1.0f), (float)event.dt * trans));
+			//notesParent->multiplyTransform(glm::translate(glm::mat4(1.0f), (float)event.dt * trans));
 
 			spawnNotes(event);
 		};
@@ -278,6 +295,7 @@ namespace ve {
 
 			registerEventListener(new EventListenerCollision("Collision"), { veEvent::VE_EVENT_FRAME_STARTED });
 			registerEventListener(new EventListenerGUI("GUI"), { veEvent::VE_EVENT_DRAW_OVERLAY});
+			registerEventListener(new EventListenerPostProcess("Glow"), { veEvent::VE_EVENT_DRAW_OVERLAY });
 			registerEventListener(new EventListenerFrame("Frame"), { veEvent::VE_EVENT_FRAME_STARTED });
 		};
 		
@@ -293,80 +311,12 @@ namespace ve {
 	
 			//scene models
 
-			
-			vector<vh::vhVertex> vertices;
-
-			//for (size_t i = -1; i <= 1; i+=2) {
-			//	for (size_t j = -1; j <= 1; j+=2) {
-			//		for (size_t k = -1; k <= 1; k+=2) {
-
-			//			vh::vhVertex v;
-			//			v.pos = glm::vec3(i, j, k);
-			//			v.normal = glm::vec3(i, j, k);
-			//			v.tangent = glm::vec3(0, 0, 0);
-			//			v.texCoord = glm::vec2(0, 0);
-			//			vertices.push_back(v);
-			//		}
-			//	}
-			//}
-			//vh::vhVertex v;
-			//v.pos = glm::vec3(-1.0, -1.0, -1.0);
-			//v.normal = glm::vec3(-1.0, 0.0, 0.0);
-			//v.tangent = glm::vec3(0.0, 0.0, 1.0);
-			//v.texCoord = glm::vec2(0, 0);
-			//vertices.push_back(v);
-
-			//v.pos = glm::vec3(-1.0, -1.0, 1.0);
-			//v.normal = glm::vec3(-1.0, 0.0, 0.0);
-			//v.tangent = glm::vec3(0.0, 0.0, -1.0);
-			//vertices.push_back(v);
-
-			//v.pos = glm::vec3(-1.0, 1.0, -1.0);
-			//v.normal = glm::vec3(-1.0, 0.0, 0.0);
-			//v.tangent = glm::vec3(0.0, 0.0, 1.0);
-			//vertices.push_back(v);
-
-			//v.pos = glm::vec3(-1.0, 1.0, 1.0);
-			//v.normal = glm::vec3(-1.0, 0.0, 0.0);
-			//v.tangent = glm::vec3(0.0, 0.0, -1.0);
-			//vertices.push_back(v);
-
-			//v.pos = glm::vec3(1.0, -1.0, -1.0);
-			//v.normal = glm::vec3(1.0, 0.0, 0.0);
-			//v.tangent = glm::vec3(0.0, 0.0, 1.0);
-			//vertices.push_back(v);
-
-			//v.pos = glm::vec3(1.0, -1.0, 1.0);
-			//v.normal = glm::vec3(1.0, 0.0, 0.0);
-			//v.tangent = glm::vec3(0.0, 0.0, -1.0);
-			//vertices.push_back(v);
-
-			//v.pos = glm::vec3(1.0, 1.0, -1.0);
-			//v.normal = glm::vec3(1.0, 0.0, 0.0);
-			//v.tangent = glm::vec3(0.0, 0.0, 1.0);
-			//vertices.push_back(v);
-
-			//v.pos = glm::vec3(1.0, 1.0, 1.0);
-			//v.normal = glm::vec3(1.0, 0.0, 0.0);
-			//v.tangent = glm::vec3(0.0, 0.0, -1.0);
-			//vertices.push_back(v);
-
-			//vector<unsigned int> indices = {
-			//	0,1,2,	1,2,3,	// Left
-			//	4,5,6,	5,6,7,	// Right
-			//	0,4,6,	0,6,2,	// Back
-			//	1,5,7,	1,7,3,	// Front
-			//	0,1,4,	1,4,5,	// Bottom
-			//	2,3,6,	3,6,7,  // Top
-			//};
-
-			//VEMesh mesh("simpleCube", vertices, indices);
 
 			// Skybox
-			VESceneNode *sp1;
-			VECHECKPOINTER( sp1 = getSceneManagerPointer()->createSkybox("The Sky", "media/models/test/sky/cloudy",
-										{	"bluecloud_ft.jpg", "bluecloud_bk.jpg", "bluecloud_up.jpg", 
-											"bluecloud_dn.jpg", "bluecloud_rt.jpg", "bluecloud_lf.jpg" }, pScene)  );
+			//VESceneNode *sp1;
+			//VECHECKPOINTER( sp1 = getSceneManagerPointer()->createSkybox("The Sky", "media/models/test/sky/cloudy",
+			//							{	"bluecloud_ft.jpg", "bluecloud_bk.jpg", "bluecloud_up.jpg", 
+			//								"bluecloud_dn.jpg", "bluecloud_rt.jpg", "bluecloud_lf.jpg" }, pScene)  );
 
 			// Groundplane
 			VESceneNode *e4;
@@ -379,10 +329,14 @@ namespace ve {
 			vector<VEMesh*> meshes;
 			vector<VEMaterial*> mats;
 
-			getSceneManagerPointer()->loadAssets("media/models/test/crate0/", "cube.obj", NULL, meshes, mats);
+			//getSceneManagerPointer()->loadAssets("media/models/test/crate0/", "cube.obj", NULL, meshes, mats);
 
-			pMesh = meshes[0];
-			pMat = mats[0];
+			getSceneManagerPointer()->loadModel("The Cube", "media/models/test/crate0", "cube.obj", 0, NULL);
+
+			pMesh = getSceneManagerPointer()->getMesh("media/models/test/crate0/cube.obj/cube");
+
+			pMat = getSceneManagerPointer()->getMaterial("media/models/test/crate0/cube.obj/cube");
+			
 			
 
 			m_irrklangEngine->play2D(("media/sounds/songs/"+song+".wav").c_str(), false);

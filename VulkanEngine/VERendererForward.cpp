@@ -211,6 +211,7 @@ namespace ve {
 		addSubrenderer(new VESubrenderFW_Skyplane());
 		addSubrenderer( new VESubrenderFW_Shadow());
 		addSubrenderer(new VESubrenderFW_Nuklear());
+		addSubrenderer(new VESubrenderFW_Glow());
 	}
 
 
