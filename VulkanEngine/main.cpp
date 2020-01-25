@@ -38,6 +38,10 @@ namespace ve {
 	int time;
 
 	bool g_gameLost = false;			//true... das Spiel wurde verloren
+	int health = 100;
+	
+
+	const int HIT_DAMAGE = 20;			// The amount of health you lose when you hit a note
 
 	VEMesh* pMesh;
 	VEMaterial* pMat;
@@ -77,34 +81,14 @@ namespace ve {
 			// Get context
 			struct nk_context * ctx = pSubrender->getContext();
 
-			// Create GUI window
-			nk_begin(ctx, "", nk_rect(0, 0, 0, 0), NK_WINDOW_BORDER);
+			if (nk_begin(ctx, "", nk_rect(0, 0, 200, 100), NK_WINDOW_BORDER )) {
+				char outbuffer[100];
 
-			// TODO: GUI
+				nk_layout_row_dynamic(ctx, 45, 1);
+				sprintf(outbuffer, "Health: %03d", health);
+				nk_label(ctx, outbuffer, NK_TEXT_LEFT);
 
-
-			//if (!g_gameLost) {
-			//	if (nk_begin(ctx, "", nk_rect(0, 0, 200, 170), NK_WINDOW_BORDER )) {
-			//		char outbuffer[100];
-			//		nk_layout_row_dynamic(ctx, 45, 1);
-			//		sprintf(outbuffer, "Score: %03d", g_score);
-			//		nk_label(ctx, outbuffer, NK_TEXT_LEFT);
-
-			//		nk_layout_row_dynamic(ctx, 45, 1);
-			//		sprintf(outbuffer, "Time: %004.1lf", g_time);
-			//		nk_label(ctx, outbuffer, NK_TEXT_LEFT);
-			//	}
-			//}
-			//else {
-			//	if (nk_begin(ctx, "", nk_rect(500, 500, 200, 170), NK_WINDOW_BORDER )) {
-			//		nk_layout_row_dynamic(ctx, 45, 1);
-			//		nk_label(ctx, "Game Over", NK_TEXT_LEFT);
-			//		if (nk_button_label(ctx, "Restart")) {
-			//			g_restart = true;
-			//		}
-			//	}
-
-			//};
+			}
 
 			// Always call at the end
 			nk_end(ctx);
@@ -138,13 +122,15 @@ namespace ve {
 
 			for (size_t i = 0; i < notesParent->getChildrenList().size(); i++) {
 
+				ve::VESceneNode *noteNode = notesParent->getChildrenList().at(i);
+
 				// Get world pos somehow
-				glm::mat4 noteTransform = notesParent->getChildrenList().at(i)->getWorldTransform();
+				glm::mat4 noteTransform = noteNode->getWorldTransform();
 				glm::vec3 notePos = glm::vec3(noteTransform[3].x, noteTransform[3].y, noteTransform[3].z);
 
 				// Get lenght encoded in name
 				// Far from elegant, but works
-				string lengthStr = notesParent->getChildrenList().at(i)->getName();
+				string lengthStr = noteNode->getName();
 				lengthStr = lengthStr.substr(0, lengthStr.find_first_of("#"));
 				double noteLength = stod(lengthStr);
 				
@@ -157,10 +143,15 @@ namespace ve {
 						if ( abs(camPos.z - notePos.z) < (0.5*noteLength + PLAYER_SIZE) ) {		// Z-axis collide
 
 							getEnginePointer()->m_irrklangEngine->play2D("media/sounds/explosion.wav", false);
+
+							health -= HIT_DAMAGE;
+							
+							notesParent->removeChild(noteNode);
+							getSceneManagerPointer()->deleteSceneNodeAndChildren(noteNode->getName());
 						}
 					}
 				}
-
+				
 				if ( notePos.y < -5.0 ) {
 					notesParent->removeChild(notesParent->getChildrenList().at(i));
 				}
