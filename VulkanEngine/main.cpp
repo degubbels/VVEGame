@@ -29,7 +29,7 @@ namespace ve {
 		int volume;
 	};
 
-	string song = "Tetris";
+	string song = "mario";
 
 	// Queue of notes per channel
 	vector<queue<Note>> notes;
@@ -189,9 +189,17 @@ namespace ve {
 					}
 				}
 				
-				if ( notePos.y < -5.0 ) {
+				if ( notePos.y < -10.0 ) {
 					notesParent->removeChild(noteNode);
-					getSceneManagerPointer()->deleteSceneNodeAndChildren(noteNode->getName());
+					try
+					{
+						getSceneManagerPointer()->deleteSceneNodeAndChildren(noteNode->getName());
+					}
+					catch (const std::exception&)
+					{
+						printf("note Deletion error");
+					}
+					
 				}
 			}
 
