@@ -597,7 +597,6 @@ namespace ve {
 					int vlqlen = getVariableLengthQuantityValue((char*)chunks[i], &dtimeTicks);
 					//printf("l: %X, dt: %X\n", length, dtimeTicks);
 
-
 					currentMicroTime += dtimeTicks * microsPerTick;
 
 					// Check that the tempo is still the same
