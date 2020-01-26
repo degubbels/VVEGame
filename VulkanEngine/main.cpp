@@ -57,7 +57,7 @@ namespace ve {
 	const float NOTE_Z_OFFSET = 12.0f;
 	const float NOTE_Y_OFFSET = -1.0f;
 	const int TIME_OFFSET = 0;//-300'000;
-	const int SPEED_CORRECTION = 1032;
+	const int SPEED_CORRECTION = 1040;		// 1000 = no correction
 
 	// Player width for collision detection purposes
 	const float PLAYER_SIZE = 0.15f;
@@ -595,20 +595,37 @@ namespace ve {
 					// dtime in ticks
 					unsigned int dtimeTicks;
 					int vlqlen = getVariableLengthQuantityValue((char*)chunks[i], &dtimeTicks);
-					//printf("l: %X, dt: %X\n", length, dtimeTicks);
+
+					// Check that we dont pass a tempo change
+					int projectedNewMicroTime = currentMicroTime + dtimeTicks * microsPerTick;
+
+					while (!tempoChanges.empty() 
+						&& projectedNewMicroTime >= tempoChanges.front().atMicro) {
+						// We would skip past a tempo change
+
+						int microsToTempoChange = tempoChanges.front().atMicro - currentMicroTime;
+						int ticksToTempoChange = microsToTempoChange / microsPerTick;
+
+						printf("New tempo for t=%d at t=%d\n", tempoChanges.front().atMicro, currentMicroTime + microsToTempoChange);
+						// New tempo
+						microsPerTick = (tempoChanges.front().newMicrosPerQuarterNote / ticksPerQuarterNote);
+						tempoChanges.pop();
+
+						dtimeTicks -= ticksToTempoChange;
+					}
 
 
 					currentMicroTime += dtimeTicks * microsPerTick;
 
 					// Check that the tempo is still the same
-					while (!tempoChanges.empty() 
-						&& currentMicroTime >= tempoChanges.front().atMicro) {
-						printf("New tempo for t=%d at t=%d", tempoChanges.front().atMicro, currentMicroTime);
-						// New tempo
-						microsPerTick = (tempoChanges.front().newMicrosPerQuarterNote / ticksPerQuarterNote);
-						tempoChanges.pop();
-						
-					}
+					//while (!tempoChanges.empty() 
+					//	&& currentMicroTime >= tempoChanges.front().atMicro) {
+					//	printf("New tempo for t=%d at t=%d\n", tempoChanges.front().atMicro, currentMicroTime);
+					//	// New tempo
+					//	microsPerTick = (tempoChanges.front().newMicrosPerQuarterNote / ticksPerQuarterNote);
+					//	tempoChanges.pop();
+					//	
+					//}
 					
 
 					// Next bytes
