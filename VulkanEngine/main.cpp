@@ -29,7 +29,7 @@ namespace ve {
 		int volume;
 	};
 
-	string song = "mario";
+	string song = "Tetris";
 
 	// Queue of notes per channel
 	vector<queue<Note>> notes;
@@ -38,7 +38,7 @@ namespace ve {
 	vector<queue<Note>> notesProto;
 
 	// The time elapsed so far (in microseconds)
-	int time;
+	double time;
 
 	bool g_gameRunning = false;
 	bool g_gameLost = false;			//true... das Spiel wurde verloren
@@ -57,12 +57,12 @@ namespace ve {
 	const float NOTE_Z_OFFSET = 12.0f;
 	const float NOTE_Y_OFFSET = -1.0f;
 	const int TIME_OFFSET = 0;//-300'000;
-	const int SPEED_CORRECTION = 1040;		// 1000 = no correction
+	const double SPEED_CORRECTION = 1073.741824;		// 1000 = no correction 1048.576 = 2^20 / 1000
 
 	// Player width for collision detection purposes
 	const float PLAYER_SIZE = 0.15f;
 	const float PLAYER_HEIGHT = 0.7f;
-	const float PLAYER_HEIGHT_OFFSET = -0.3;
+	const float PLAYER_HEIGHT_OFFSET = -0.3f;
 	
 	const float NOTE_SIZE = 0.7f;
 
@@ -102,7 +102,6 @@ namespace ve {
 				if (g_gameLost) {
 
 					if (nk_begin(ctx, "", nk_rect(0, 0, 200, 200), NK_WINDOW_BORDER)) {
-						char outbuffer[100];
 
 						nk_layout_row_dynamic(ctx, 45, 1);
 						nk_label(ctx, "Game Over", NK_TEXT_LEFT);
@@ -116,7 +115,7 @@ namespace ve {
 				} else {
 
 					if (nk_begin(ctx, "", nk_rect(0, 0, 200, 100), NK_WINDOW_BORDER)) {
-						char outbuffer[100];
+						
 
 						nk_layout_row_dynamic(ctx, 45, 1);
 						if (nk_button_label(ctx, "Start")) {
@@ -178,8 +177,9 @@ namespace ve {
 
 						if ( abs(camPos.z - notePos.z) < (0.5*noteLength + PLAYER_SIZE) ) {		// Z-axis collide
 
-							getEnginePointer()->m_irrklangEngine->setSoundVolume(0.2);
+							getEnginePointer()->m_irrklangEngine->setSoundVolume(0.2f);
 							getEnginePointer()->m_irrklangEngine->play2D("media/sounds/explosion.wav", false);
+							getEnginePointer()->m_irrklangEngine->setSoundVolume(1.0f);
 
 							health -= HIT_DAMAGE;
 							
@@ -234,6 +234,7 @@ namespace ve {
 	protected:
 		virtual void onFrameStarted(veEvent event) {
 
+			//printf("t=%f\n", time);
 
 			VESceneManager *sceneManager = getSceneManagerPointer();
 			if (g_gameStart) {
@@ -242,7 +243,11 @@ namespace ve {
 			}
 
 			if (g_gameRunning) {
-				int newTime = time + (event.dt * 1'000'000);
+				double newTime = time + (event.dt * 1'000'000.0);
+
+				//if ((double) newTime != newTimed) {
+				//	printf("loss of precision casting micros time from %f to %f\n", newTimed, newTime);
+				//}
 
 				// Move notes backward
 				float speed = RUNNING_SPEED;
@@ -421,14 +426,14 @@ namespace ve {
 
 		struct TempoChange
 		{
-			int atMicro;	// Time in micros at which to change
-			int newMicrosPerQuarterNote;
+			double atMicro;	// Time in micros at which to change
+			double newMicrosPerQuarterNote;
 		};
 
 		string trackName = "Lorem Ipsum";
-		int microsPerQuarterNote = 500'000;	// Default 120 bpm
-		int ticksPerQuarterNote;
-		int microsPerTick;
+		double microsPerQuarterNote = 500'000.0;	// Default 120 bpm
+		double ticksPerQuarterNote;
+		double microsPerTick;
 
 		bool isSmallEndian() {
 			unsigned int i = 1;
@@ -560,7 +565,7 @@ namespace ve {
 			}
 
 			// Current time since start of song in microseconds
-			int currentMicroTime;
+			double currentMicroTime;
 			int currentVolume = 63;		// Volume 0-127
 
 			// Calculate for default
@@ -596,26 +601,29 @@ namespace ve {
 					unsigned int dtimeTicks;
 					int vlqlen = getVariableLengthQuantityValue((char*)chunks[i], &dtimeTicks);
 
+					double dtimeTicksd = dtimeTicks;
+
 					// Check that we dont pass a tempo change
-					int projectedNewMicroTime = currentMicroTime + dtimeTicks * microsPerTick;
+					double projectedNewMicroTime = currentMicroTime + dtimeTicks * microsPerTick;
 
 					while (!tempoChanges.empty() 
 						&& projectedNewMicroTime >= tempoChanges.front().atMicro) {
 						// We would skip past a tempo change
 
-						int microsToTempoChange = tempoChanges.front().atMicro - currentMicroTime;
-						int ticksToTempoChange = microsToTempoChange / microsPerTick;
+						double microsToTempoChange = tempoChanges.front().atMicro - currentMicroTime;
+						double ticksToTempoChange = microsToTempoChange / microsPerTick;
 
-						printf("New tempo for t=%d at t=%d\n", tempoChanges.front().atMicro, currentMicroTime + microsToTempoChange);
+						printf("New tempo for t=%f at t=%f\n", tempoChanges.front().atMicro, currentMicroTime + microsToTempoChange);
 						// New tempo
 						microsPerTick = (tempoChanges.front().newMicrosPerQuarterNote / ticksPerQuarterNote);
 						tempoChanges.pop();
 
-						dtimeTicks -= ticksToTempoChange;
+						printf("ticksToTempoChange=%f\n", ticksToTempoChange);
+						dtimeTicksd -= ticksToTempoChange;
 					}
 
 
-					currentMicroTime += dtimeTicks * microsPerTick;
+					currentMicroTime += dtimeTicksd * microsPerTick;
 
 					// Check that the tempo is still the same
 					//while (!tempoChanges.empty() 
@@ -664,18 +672,20 @@ namespace ve {
 								// Shift one byte right
 								tempo = tempo >> 8;
 
+								double tempod = tempo;
+
 								// Multiply tempo (seems to be necessary, but tempochanges still fuck up
 								// Possibly different tempos per channel..
-								tempo *= (1000.0/SPEED_CORRECTION);
+								tempod *= (1000.0/SPEED_CORRECTION);
 
-								microsPerQuarterNote = tempo;
+								microsPerQuarterNote = tempod;
 								//printf("tempo: %X\n", (int)microsPerQuarterNote);
 
 								// Change current tempo
 								microsPerTick = (microsPerQuarterNote / ticksPerQuarterNote);
 
 								// Record change for other tracks
-								tempoChangesProto.push({ currentMicroTime, (int)tempo });
+								tempoChangesProto.push({ currentMicroTime, tempod });
 
 								break;
 							}
