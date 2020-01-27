@@ -57,7 +57,7 @@ namespace ve {
 	const float NOTE_Z_OFFSET = 12.0f;
 	const float NOTE_Y_OFFSET = -1.0f;
 	const int TIME_OFFSET = 0;//-300'000;
-	const double SPEED_CORRECTION = 1073.741824;		// 1000 = no correction 1048.576 = 2^20 / 1000
+	const double SPEED_CORRECTION = 1000;//1073.741824;		// 1000 = no correction 1048.576 = 2^20 / 1000
 
 	// Player width for collision detection purposes
 	const float PLAYER_SIZE = 0.15f;
