@@ -133,6 +133,25 @@ namespace ve {
 			sets.push_back(m_descriptorSetsResources[entity->getResourceIdx() / m_resourceArrayLength]);
 		}
 
+		//if (sets[1] == VK_NULL_HANDLE)	{
+		//	printf("bindDescriptorSetsPerEntity set[1] NULL\n");
+
+			//if (m_descriptorSetsResources.size() > 0 && entity->getResourceIdx() % m_resourceArrayLength == 0) {
+			//	sets[1] = m_descriptorSetsResources[0];
+			//}
+		//}
+		
+
+		//if (sets[1] == VK_NULL_HANDLE) {
+		//	printf("bindDescriptorSetsPerEntity set[1] NULL\n");
+		//	return;
+		//}
+
+		if (sets.data()[1] == VK_NULL_HANDLE) {
+			printf("descriptorSet[0] NULL in bindDescriptorSetsPerEntity\n");
+			return;
+		}		
+
 		uint32_t offset = entity->m_memoryHandle.entryIndex * sizeof(VEEntity::veUBOPerEntity_t);
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout,
 								3, (uint32_t)sets.size(), sets.data(), 1, &offset);
