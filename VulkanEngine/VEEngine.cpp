@@ -549,6 +549,24 @@ namespace ve {
 			m_AvgDrawTime = vh::vhAverage(vh::vhTimeDuration(t_now), m_AvgDrawTime);
 
 			//----------------------------------------------------------------------------------
+			//PostProcess
+			
+			// Do this inside drawframe
+
+			//t_now = vh::vhTimeNow();
+			//m_pRenderer->preparePostProcess();
+			//m_AvgPrepOvlTime = vh::vhAverage(vh::vhTimeDuration(t_now), m_AvgPrepOvlTime);
+
+			//t_now = vh::vhTimeNow();
+			//event.type = veEvent::VE_EVENT_DRAW_POSTPROCESS;		//notify all listeners that they can draw an overlay now
+			//callListeners(m_dt, event);
+			//m_AvgEndedTime = vh::vhAverage(vh::vhTimeDuration(t_now), m_AvgEndedTime);
+
+			//t_now = vh::vhTimeNow();
+			//m_pRenderer->drawPostProcess();			//draw overlay in the subrenderer
+			//m_AvgDrawOvlTime = vh::vhAverage(vh::vhTimeDuration(t_now), m_AvgDrawOvlTime);
+
+			//----------------------------------------------------------------------------------
 			//Overlay
 
 			t_now = vh::vhTimeNow();

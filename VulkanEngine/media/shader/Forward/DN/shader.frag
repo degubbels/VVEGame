@@ -32,8 +32,8 @@ layout(set = 3, binding = 0) uniform objectUBO_t {
     objectData_t data;
 } objectUBO;
 
-layout(set = 4, binding = 0) uniform sampler2D texSamplerArray[RESOURCEARRAYLENGTH];
-layout(set = 4, binding = 1) uniform sampler2D normalSamplerArray[RESOURCEARRAYLENGTH];
+layout(set = 3, binding = 0) uniform sampler2D texSamplerArray[RESOURCEARRAYLENGTH];
+layout(set = 3, binding = 1) uniform sampler2D normalSamplerArray[RESOURCEARRAYLENGTH];
 
 
 void main() {
@@ -113,5 +113,5 @@ void main() {
         result += fragColor * ambcol;
     }
 
-    outColor = vec4( result, 1.0 );
+    outColor = vec4( result, 1.0
 }

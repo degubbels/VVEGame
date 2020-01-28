@@ -72,6 +72,9 @@ namespace ve {
 		VkRenderPass				m_renderPassClear;					///<The first light render pass, clearing the framebuffers
 		VkRenderPass				m_renderPassLoad;					///<The second light render pass - no clearing of framebuffer
 
+		// Post processing render pass
+		VkRenderPass				m_renderPassPostProcess;			/// Render pass for post processing
+
 		std::vector<VkFramebuffer>	m_swapChainFramebuffers;			///<Framebuffers for light pass
 		VETexture *					m_depthMap = nullptr;				///<the image depth map	
 		std::vector<std::vector<VETexture *>>	m_shadowMaps;			///<the shadow maps - a list of map cascades
@@ -87,6 +90,7 @@ namespace ve {
 
 		std::vector<VkSemaphore>	m_imageAvailableSemaphores;			///<sem for waiting for the next swapchain image
 		std::vector<VkSemaphore>	m_renderFinishedSemaphores;			///<sem for signalling that rendering done
+		std::vector<VkSemaphore>	m_postProcessSemaphores;			///<sem for signalling that rendering done
 		std::vector<VkSemaphore>	m_overlaySemaphores;				///<sem for signalling that rendering done
 		std::vector<VkFence>		m_inFlightFences;					///<fences for halting the next image render until this one is done
 		size_t						m_currentFrame = 0;					///<int for the fences
@@ -115,6 +119,8 @@ namespace ve {
 		virtual void drawFrame();					//draw one frame
 		virtual void prepareOverlay();				//prepare to draw the overlay
 		virtual void drawOverlay();					//Draw the overlay (GUI)
+		virtual void preparePostProcess();			//prepare to draw the postprocessing
+		virtual void drawPostProcess();				//Draw the postprocessing
 		virtual void presentFrame();				//Present the newly drawn frame
 		virtual void closeRenderer();				//close the renderer
 		virtual void recreateSwapchain();			//new swapchain due to window size change

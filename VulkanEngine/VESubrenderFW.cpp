@@ -159,10 +159,10 @@ namespace ve {
 								VECamera *pCamera, VELight *pLight,
 								std::vector<VkDescriptorSet> descriptorSetsShadow) {
 
-		if (m_entities.size() == 0) return;
+		//if (m_entities.size() == 0) return;
 		m_idxLastRecorded = (uint32_t)m_entities.size() - 1;
 
-		if (numPass > 0 && getClass() != VE_SUBRENDERER_CLASS_OBJECT) return;
+		//if (numPass > 0 && getClass() != VE_SUBRENDERER_CLASS_OBJECT) return;
 
 		bindPipeline(commandBuffer);
 

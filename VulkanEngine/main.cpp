@@ -125,8 +125,8 @@ namespace ve {
 		*	Extra render step for glow effect
 		*/
 		virtual void onDrawOverlay(veEvent event) {
-
-			
+			VESubrenderFW_Nuklear* pSubrender = (VESubrenderFW_Nuklear*)getRendererPointer()->getOverlay();
+			if (pSubrender == nullptr) return;
 		}
 
 	public:
@@ -295,7 +295,7 @@ namespace ve {
 
 			registerEventListener(new EventListenerCollision("Collision"), { veEvent::VE_EVENT_FRAME_STARTED });
 			registerEventListener(new EventListenerGUI("GUI"), { veEvent::VE_EVENT_DRAW_OVERLAY});
-			registerEventListener(new EventListenerPostProcess("Glow"), { veEvent::VE_EVENT_DRAW_OVERLAY });
+			registerEventListener(new EventListenerPostProcess("Glow"), { veEvent::VE_EVENT_DRAW_POSTPROCESS });
 			registerEventListener(new EventListenerFrame("Frame"), { veEvent::VE_EVENT_FRAME_STARTED });
 		};
 		
@@ -337,7 +337,8 @@ namespace ve {
 
 			pMat = getSceneManagerPointer()->getMaterial("media/models/test/crate0/cube.obj/cube");
 			
-			
+			VEEntity* e1;
+			VECHECKPOINTER(e1 = getSceneManagerPointer()->createEntity("testEntity", pMesh, pMat, pScene));
 
 			m_irrklangEngine->play2D(("media/sounds/songs/"+song+".wav").c_str(), false);
 		};
@@ -442,7 +443,7 @@ namespace ve {
 			if (format != 1)
 			{
 				// Invalid format
-				printf("INVALID FORMAT, only 1 is accepted");
+				printf("INVALID FORMAT, only 1 is accepted\n");
 				return;
 			}
 

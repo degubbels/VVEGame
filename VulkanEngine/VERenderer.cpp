@@ -38,6 +38,10 @@ namespace ve {
 			m_subrenderOverlay = pSub;
 			return;
 		}
+		if (pSub->getClass() == VESubrender::VE_SUBRENDERER_CLASS_POSTPROCESS) {
+			m_subrenderPostProcess = pSub;
+			return;
+		}
 		m_subrenderers.push_back( pSub );
 	}
 
@@ -71,6 +75,10 @@ namespace ve {
 		if (m_subrenderOverlay != nullptr) {
 			m_subrenderOverlay->closeSubrenderer();
 			delete m_subrenderOverlay;
+		}
+		if (m_subrenderPostProcess!= nullptr) {
+			m_subrenderPostProcess->closeSubrenderer();
+			delete m_subrenderPostProcess;
 		}
 	}
 
