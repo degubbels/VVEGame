@@ -405,10 +405,10 @@ namespace ve {
 			vector<vh::vhVertex> vertices;
 
 			// Skybox
-			VESceneNode *sp1;
-			VECHECKPOINTER( sp1 = getSceneManagerPointer()->createSkybox("The Sky", "media/models/test/sky/cloudy",
-										{	"bluecloud_ft.jpg", "bluecloud_bk.jpg", "bluecloud_up.jpg", 
-											"bluecloud_dn.jpg", "bluecloud_rt.jpg", "bluecloud_lf.jpg" }, pScene)  );
+			//VESceneNode *sp1;
+			//VECHECKPOINTER( sp1 = getSceneManagerPointer()->createSkybox("The Sky", "media/models/test/sky/cloudy",
+			//							{	"bluecloud_ft.jpg", "bluecloud_bk.jpg", "bluecloud_up.jpg", 
+			//								"bluecloud_dn.jpg", "bluecloud_rt.jpg", "bluecloud_lf.jpg" }, pScene)  );
 
 			// Groundplane
 			VESceneNode *e4;
@@ -422,9 +422,11 @@ namespace ve {
 			vector<VEMaterial*> mats;
 
 			getSceneManagerPointer()->loadAssets("media/models/test/crate0/", "cube.obj", NULL, meshes, mats);
+			VESceneNode* e1;
+			VECHECKPOINTER(e1 = getSceneManagerPointer()->loadModel("cubeProto", "media/models/test/crate0", "cube.obj", 0, nullptr));
 
-			pMesh = meshes[0];
-			pMat = mats[0];
+			pMesh = getSceneManagerPointer()->getMesh("media/models/test/crate0/cube.obj/cube");
+			pMat = getSceneManagerPointer()->getMaterial("media/models/test/crate0/cube.obj/cube");
 			
 		};
 	};

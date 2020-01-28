@@ -113,5 +113,17 @@ void main() {
         result += fragColor * ambcol;
     }
 
-    outColor = vec4( result, 1.0 );
+    vec3 pos = objectUBO.data.model[3].xyz;
+
+    float x = (pos.x) / 10;
+    float y = (pos.y) / 10;
+    
+    //float z = pos.z / 500;
+
+    //vec3 ou = vec3(0.2, z, 1.0-z);
+
+   // result += pos.z;
+
+    outColor = vec4( x, y, 0.1, 1.0 );
+    //outColor = vec4(1,0,0,1);
 }
