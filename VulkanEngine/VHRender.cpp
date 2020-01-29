@@ -401,6 +401,11 @@ namespace vh {
 		std::vector<VkWriteDescriptorSet> descriptorWrites = {};
 		descriptorWrites.resize(maps.size());
 
+		if (descriptorSet == VK_NULL_HANDLE) {
+			printf("descriptorset NULL in vhRenderUpdateDescriptorSetMaps\n");
+			return VK_SUCCESS;
+		}
+
 		for (uint32_t i = binding; i < maps.size(); i++) {
 
 			descriptorWrites[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

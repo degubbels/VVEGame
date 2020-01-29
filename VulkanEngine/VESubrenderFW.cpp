@@ -103,6 +103,15 @@ namespace ve {
 			set.push_back(descriptorSetsShadow[imageIndex]);
 		}
 
+		for (size_t i = 0; i < set.size(); i++)
+		{
+			if (set.data()[i] == VK_NULL_HANDLE) {
+				printf("descriptorSet[%d] NULL in bindDescriptorSetsPerFrame\n", i);
+				return;
+			}
+		}
+		
+
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout,
 			0, (uint32_t)set.size(), set.data(), 2, offsets);
 
@@ -131,6 +140,11 @@ namespace ve {
 		std::vector<VkDescriptorSet> sets = { entity->m_memoryHandle.pMemBlock->descriptorSets[imageIndex] };
 		if (m_descriptorSetsResources.size() > 0 && entity->getResourceIdx() % m_resourceArrayLength == 0) {
 			sets.push_back(m_descriptorSetsResources[entity->getResourceIdx() / m_resourceArrayLength]);
+		}
+
+		if (sets.data()[1] == VK_NULL_HANDLE) {
+			printf("descriptorSet[0] NULL in bindDescriptorSetsPerEntity\n");
+			return;
 		}
 
 		uint32_t offset = entity->m_memoryHandle.entryIndex * sizeof(VEEntity::veUBOPerEntity_t);
@@ -208,7 +222,9 @@ namespace ve {
 
 		vkCmdBindIndexBuffer(commandBuffer, entity->m_pMesh->m_indexBuffer, 0, VK_INDEX_TYPE_UINT32); //bind index buffer
 
+
 		vkCmdDrawIndexed(commandBuffer, entity->m_pMesh->m_indexCount, 1, 0, 0, 0); //record the draw call
+
 	}
 
 

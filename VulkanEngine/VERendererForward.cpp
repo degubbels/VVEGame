@@ -533,7 +533,7 @@ namespace ve {
 
 
 		// Bind descriptor set to get image as input
-		((VESubrenderFW_Glow*)m_subrenderPostProcess)->bindDescriptorSetsPerFrame(m_commandBuffers[m_imageIndex], m_imageIndex, pCamera, getSceneManagerPointer()->getLights()[0], m_descriptorSetsShadow);
+		//((VESubrenderFW_Glow*)m_subrenderPostProcess)->bindDescriptorSetsPerFrame(m_commandBuffers[m_imageIndex], m_imageIndex, pCamera, getSceneManagerPointer()->getLights()[0], m_descriptorSetsShadow);
 
 		// Bind image as textures
 		//((VESubrenderFW_Glow*)m_subrenderPostProcess)->bindDescriptorSetImage(m_commandBuffers[m_imageIndex], m_imageIndex, m_swapChainFramebuffers[m_imageIndex]);

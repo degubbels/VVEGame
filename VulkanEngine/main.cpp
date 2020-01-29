@@ -329,16 +329,19 @@ namespace ve {
 			vector<VEMesh*> meshes;
 			vector<VEMaterial*> mats;
 
-			//getSceneManagerPointer()->loadAssets("media/models/test/crate0/", "cube.obj", NULL, meshes, mats);
+			getSceneManagerPointer()->loadAssets("media/models/test/crate0/", "cube.obj", NULL, meshes, mats);
 
-			getSceneManagerPointer()->loadModel("The Cube", "media/models/test/crate0", "cube.obj", 0, NULL);
+			//getSceneManagerPointer()->loadModel("The Cube", "media/models/test/crate0", "cube.obj", 0, NULL);
 
-			pMesh = getSceneManagerPointer()->getMesh("media/models/test/crate0/cube.obj/cube");
+			//pMesh = getSceneManagerPointer()->getMesh("media/models/test/crate0/cube.obj/cube");
 
-			pMat = getSceneManagerPointer()->getMaterial("media/models/test/crate0/cube.obj/cube");
+			//pMat = getSceneManagerPointer()->getMaterial("media/models/test/crate0/cube.obj/cube");
 			
-			VEEntity* e1;
-			VECHECKPOINTER(e1 = getSceneManagerPointer()->createEntity("testEntity", pMesh, pMat, pScene));
+			pMesh = meshes[0];
+			pMat = mats[1];
+
+			//VEEntity* e1;
+			//VECHECKPOINTER(e1 = getSceneManagerPointer()->createEntity("testEntity", pMesh, pMat, pScene));
 
 			m_irrklangEngine->play2D(("media/sounds/songs/"+song+".wav").c_str(), false);
 		};
