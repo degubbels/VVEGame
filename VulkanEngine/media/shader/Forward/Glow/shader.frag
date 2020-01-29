@@ -172,10 +172,18 @@ void main() {
 
     //outColor = vec4(inUV.x, inUV.y, 0.0, 1.0);
 
-    if (inUV.x < 0.1) {
-        outColor = vec4(0.4);
-    } else if (inUV.x > 0.9) {
-        outColor = vec4(0.4);
+    float threshold = 0.15;
+    float mult = 2;
+
+    if (inUV.x < threshold) {
+        //outColor = vec4(0.4);
+        float val = threshold - inUV.x;
+        outColor = vec4(val * mult);
+
+    } else if (inUV.x > threshold) {
+        float val = threshold - (1-inUV.x);
+        outColor = vec4(val * mult);
+
     } else {
         outColor = vec4(0.0);
     }
