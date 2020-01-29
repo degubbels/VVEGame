@@ -46,9 +46,9 @@ namespace ve {
 	const float COURSE_WIDTH = 14.0;
 	const float RUNNING_SPEED = 10.0f;
 	const float NOTE_Z_OFFSET = 12.0f;
-	const float NOTE_Y_OFFSET = 1.0f;//-1.0f;
-	const int TIME_OFFSET = -300'000;
-	const int SPEED_CORRECTION = 1032;
+	const float NOTE_Y_OFFSET = -1.0f;
+	const int TIME_OFFSET = 0;
+	const int SPEED_CORRECTION = 1000;
 
 	// Player width for collision detection purposes
 	const float PLAYER_SIZE = 0.15f;
@@ -57,7 +57,7 @@ namespace ve {
 	
 	const float NOTE_SIZE = 0.7f;
 
-	const float DOWN_MOVEMENT_QUOTIENT = 0.02;//1.0f;
+	const float DOWN_MOVEMENT_QUOTIENT = 1.0f;
 	
 	VESceneNode *notesParent;
 
@@ -225,7 +225,7 @@ namespace ve {
 			// Move notes backward
 			float speed = RUNNING_SPEED;
 			glm::vec3 trans = speed * glm::vec3(0, -DOWN_MOVEMENT_QUOTIENT, -1.0);
-			//notesParent->multiplyTransform(glm::translate(glm::mat4(1.0f), (float)event.dt * trans));
+			notesParent->multiplyTransform(glm::translate(glm::mat4(1.0f), (float)event.dt * trans));
 
 			spawnNotes(event);
 		};

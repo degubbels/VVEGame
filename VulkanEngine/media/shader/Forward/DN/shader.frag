@@ -114,5 +114,10 @@ void main() {
     // }
 
     // outColor = vec4( result, 1.0);
-    outColor = vec4(1.0);
+    vec3 pos = objectUBO.data.model[3].xyz;
+
+    float x = (pos.x) / 10;
+    float y = (pos.y) / 10;
+    
+    outColor = vec4( x, y, 0.1, 1.0 );
 }

@@ -171,5 +171,13 @@ void main() {
     //vec4 texel = texelFetch(shadowMap[0], ivec2(inUV.x, inUV.y), 0);
 
     //outColor = vec4(inUV.x, inUV.y, 0.0, 1.0);
-    outColor = vec4(0.0);
+
+    if (inUV.x < 0.1) {
+        outColor = vec4(0.4);
+    } else if (inUV.x > 0.9) {
+        outColor = vec4(0.4);
+    } else {
+        outColor = vec4(0.0);
+    }
+    
 }
