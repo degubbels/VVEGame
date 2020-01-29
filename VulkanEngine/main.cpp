@@ -34,10 +34,19 @@ namespace ve {
 	// Queue of notes per channel
 	vector<queue<Note>> notes;
 
-	// The time elapsed so far (in microseconds)
-	int time;
+	// Original
+	vector<queue<Note>> notesProto;
 
+	// The time elapsed so far (in microseconds)
+	double time;
+
+	bool g_gameRunning = false;
 	bool g_gameLost = false;			//true... das Spiel wurde verloren
+	bool g_gameStart = false;
+	int health = 100;
+
+	const int MAX_HEALTH = 100;
+	const int HIT_DAMAGE = 20;			// The amount of health you lose when you hit a note
 
 	VEMesh* pMesh;
 	VEMaterial* pMat;
@@ -47,13 +56,13 @@ namespace ve {
 	const float RUNNING_SPEED = 10.0f;
 	const float NOTE_Z_OFFSET = 12.0f;
 	const float NOTE_Y_OFFSET = -1.0f;
-	const int TIME_OFFSET = 0;
-	const int SPEED_CORRECTION = 1000;
+	const int TIME_OFFSET = 0;//-300'000;
+	const double SPEED_CORRECTION = 1000;//1073.741824;		// 1000 = no correction 1048.576 = 2^20 / 1000
 
 	// Player width for collision detection purposes
 	const float PLAYER_SIZE = 0.15f;
 	const float PLAYER_HEIGHT = 0.7f;
-	const float PLAYER_HEIGHT_OFFSET = -0.3;
+	const float PLAYER_HEIGHT_OFFSET = -0.3f;
 	
 	const float NOTE_SIZE = 0.7f;
 
@@ -77,34 +86,46 @@ namespace ve {
 			// Get context
 			struct nk_context * ctx = pSubrender->getContext();
 
-			// Create GUI window
-			nk_begin(ctx, "", nk_rect(0, 0, 0, 0), NK_WINDOW_BORDER);
 
-			// TODO: GUI
+			if (g_gameRunning) {
 
+				if (nk_begin(ctx, "", nk_rect(0, 0, 200, 100), NK_WINDOW_BORDER)) {
+					char outbuffer[100];
 
-			//if (!g_gameLost) {
-			//	if (nk_begin(ctx, "", nk_rect(0, 0, 200, 170), NK_WINDOW_BORDER )) {
-			//		char outbuffer[100];
-			//		nk_layout_row_dynamic(ctx, 45, 1);
-			//		sprintf(outbuffer, "Score: %03d", g_score);
-			//		nk_label(ctx, outbuffer, NK_TEXT_LEFT);
+					nk_layout_row_dynamic(ctx, 45, 1);
+					sprintf(outbuffer, "Health: %03d", health);
+					nk_label(ctx, outbuffer, NK_TEXT_LEFT);
 
-			//		nk_layout_row_dynamic(ctx, 45, 1);
-			//		sprintf(outbuffer, "Time: %004.1lf", g_time);
-			//		nk_label(ctx, outbuffer, NK_TEXT_LEFT);
-			//	}
-			//}
-			//else {
-			//	if (nk_begin(ctx, "", nk_rect(500, 500, 200, 170), NK_WINDOW_BORDER )) {
-			//		nk_layout_row_dynamic(ctx, 45, 1);
-			//		nk_label(ctx, "Game Over", NK_TEXT_LEFT);
-			//		if (nk_button_label(ctx, "Restart")) {
-			//			g_restart = true;
-			//		}
-			//	}
+				}
+			} else {
+				
+				if (g_gameLost) {
 
-			//};
+					if (nk_begin(ctx, "", nk_rect(0, 0, 200, 200), NK_WINDOW_BORDER)) {
+
+						nk_layout_row_dynamic(ctx, 45, 1);
+						nk_label(ctx, "Game Over", NK_TEXT_LEFT);
+
+						
+						if (nk_button_label(ctx, "Restart")) {
+							g_gameStart = true;
+						}
+					}
+
+				} else {
+
+					if (nk_begin(ctx, "", nk_rect(0, 0, 200, 100), NK_WINDOW_BORDER)) {
+						
+
+						nk_layout_row_dynamic(ctx, 45, 1);
+						if (nk_button_label(ctx, "Start")) {
+							g_gameStart = true;
+						}
+					}
+				}
+			}
+
+			
 
 			// Always call at the end
 			nk_end(ctx);
@@ -138,11 +159,11 @@ namespace ve {
 	};
 
 
-	static std::default_random_engine e{ 12345 };					//Für Zufallszahlen
-	static std::uniform_real_distribution<> d{ -10.0f, 10.0f };		//Für Zufallszahlen
+	static std::default_random_engine e{ 12345 };					//Fï¿½r Zufallszahlen
+	static std::uniform_real_distribution<> d{ -10.0f, 10.0f };		//Fï¿½r Zufallszahlen
 
 	//
-	// Überprüfen, ob die Kamera die Kiste berührt
+	// ï¿½berprï¿½fen, ob die Kamera die Kiste berï¿½hrt
 	//
 	class EventListenerCollision : public VEEventListener {
 	protected:
@@ -155,13 +176,15 @@ namespace ve {
 
 			for (size_t i = 0; i < notesParent->getChildrenList().size(); i++) {
 
+				ve::VESceneNode *noteNode = notesParent->getChildrenList().at(i);
+
 				// Get world pos somehow
-				glm::mat4 noteTransform = notesParent->getChildrenList().at(i)->getWorldTransform();
+				glm::mat4 noteTransform = noteNode->getWorldTransform();
 				glm::vec3 notePos = glm::vec3(noteTransform[3].x, noteTransform[3].y, noteTransform[3].z);
 
 				// Get lenght encoded in name
 				// Far from elegant, but works
-				string lengthStr = notesParent->getChildrenList().at(i)->getName();
+				string lengthStr = noteNode->getName();
 				lengthStr = lengthStr.substr(0, lengthStr.find_first_of("#"));
 				double noteLength = stod(lengthStr);
 				
@@ -173,13 +196,29 @@ namespace ve {
 
 						if ( abs(camPos.z - notePos.z) < (0.5*noteLength + PLAYER_SIZE) ) {		// Z-axis collide
 
+							getEnginePointer()->m_irrklangEngine->setSoundVolume(0.2f);
 							getEnginePointer()->m_irrklangEngine->play2D("media/sounds/explosion.wav", false);
+							getEnginePointer()->m_irrklangEngine->setSoundVolume(1.0f);
+
+							health -= HIT_DAMAGE;
+							
+							notesParent->removeChild(noteNode);
+							getSceneManagerPointer()->deleteSceneNodeAndChildren(noteNode->getName());
 						}
 					}
 				}
-
-				if ( notePos.y < -5.0 ) {
-					notesParent->removeChild(notesParent->getChildrenList().at(i));
+				
+				if ( notePos.y < -10.0 ) {
+					notesParent->removeChild(noteNode);
+					try
+					{
+						getSceneManagerPointer()->deleteSceneNodeAndChildren(noteNode->getName());
+					}
+					catch (const std::exception&)
+					{
+						printf("note Deletion error");
+					}
+					
 				}
 			}
 
@@ -222,17 +261,91 @@ namespace ve {
 	protected:
 		virtual void onFrameStarted(veEvent event) {
 
-			// Move notes backward
-			float speed = RUNNING_SPEED;
-			glm::vec3 trans = speed * glm::vec3(0, -DOWN_MOVEMENT_QUOTIENT, -1.0);
-			notesParent->multiplyTransform(glm::translate(glm::mat4(1.0f), (float)event.dt * trans));
+			//printf("t=%f\n", time);
 
-			spawnNotes(event);
+			VESceneManager *sceneManager = getSceneManagerPointer();
+			if (g_gameStart) {
+				startGame(event);
+				g_gameStart = false;
+			}
+
+			if (g_gameRunning) {
+				double newTime = time + (event.dt * 1'000'000.0);
+
+				//if ((double) newTime != newTimed) {
+				//	printf("loss of precision casting micros time from %f to %f\n", newTimed, newTime);
+				//}
+
+				// Move notes backward
+				float speed = RUNNING_SPEED;
+				glm::vec3 trans = speed * glm::vec3(0, -DOWN_MOVEMENT_QUOTIENT, -1.0);
+				notesParent->multiplyTransform(glm::translate(glm::mat4(1.0f), (float)event.dt * trans));
+
+				spawnNotes(event);
+
+				if (health <= 0) {
+					stopGame();
+				}
+
+				time = newTime;
+			}
 		};
 
-		virtual void spawnNotes(veEvent event) {
-			int newTime = time + (event.dt * 1'000'000);
+		void stopGame() {
+			g_gameLost = true;
+			g_gameRunning = false;
+			getEnginePointer()->m_irrklangEngine->stopAllSounds();
+		}
 
+		void startGame(veEvent event) {
+
+			// Clean up last run
+			if (g_gameLost) {
+				//for (size_t i = 0; i < notesParent->getChildrenList().size(); i++) {
+				//	VESceneNode *note = notesParent->getChildrenList().at(i);
+
+				vector<VESceneNode*> noteList = notesParent->getChildrenCopy();
+
+				for (size_t i = 0; i < noteList.size(); i++) {
+					VESceneNode *note = noteList.at(i);
+					getSceneManagerPointer()->deleteSceneNodeAndChildren(note->getName());
+				}
+
+				//while (notesParent->getChildrenList().size() > 0) {
+				//	VESceneNode* note = notesParent->getChildrenList().back();
+				//	//notesParent->removeChild(note);
+				//	getSceneManagerPointer()->deleteSceneNodeAndChildren(note->getName());
+				//}
+
+
+
+
+				notesParent->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+
+				g_gameLost = false;
+			}
+
+
+
+			g_gameRunning = true;
+			time = 0;
+
+			// Deep copy
+			//notes.resize(16);
+			//for (size_t i = 0; i < 16; i++)
+			//{
+			//	notes[i] = notesProto[i];
+			//}
+
+			notes = notesProto;
+
+			health = MAX_HEALTH;
+			getEnginePointer()->m_irrklangEngine->setSoundVolume(1.0);
+			getEnginePointer()->m_irrklangEngine->play2D(("media/sounds/songs/" + song + ".wav").c_str(), false);
+		}
+
+		virtual void spawnNotes(veEvent event) {
+			
 			// Check all midi channels
 			for (size_t i = 0; i < 16; i++) {
 				
@@ -266,9 +379,6 @@ namespace ve {
 					VECHECKPOINTER(e1 = getSceneManagerPointer()->createEntity(cubeName, pMesh, pMat, noteNode));
 				}
 			}
-
-
-			time = newTime;
 
 		}
 
@@ -311,6 +421,8 @@ namespace ve {
 	
 			//scene models
 
+			
+			vector<vh::vhVertex> vertices;
 
 			// Skybox
 			//VESceneNode *sp1;
@@ -330,20 +442,12 @@ namespace ve {
 			vector<VEMaterial*> mats;
 
 			getSceneManagerPointer()->loadAssets("media/models/test/crate0/", "cube.obj", NULL, meshes, mats);
+			VESceneNode* e1;
+			VECHECKPOINTER(e1 = getSceneManagerPointer()->loadModel("cubeProto", "media/models/test/crate0", "cube.obj", 0, nullptr));
 
-			//getSceneManagerPointer()->loadModel("The Cube", "media/models/test/crate0", "cube.obj", 0, NULL);
-
-			//pMesh = getSceneManagerPointer()->getMesh("media/models/test/crate0/cube.obj/cube");
-
-			//pMat = getSceneManagerPointer()->getMaterial("media/models/test/crate0/cube.obj/cube");
+			pMesh = getSceneManagerPointer()->getMesh("media/models/test/crate0/cube.obj/cube");
+			pMat = getSceneManagerPointer()->getMaterial("media/models/test/crate0/cube.obj/cube");
 			
-			pMesh = meshes[0];
-			pMat = mats[1];
-
-			//VEEntity* e1;
-			//VECHECKPOINTER(e1 = getSceneManagerPointer()->createEntity("testEntity", pMesh, pMat, pScene));
-
-			m_irrklangEngine->play2D(("media/sounds/songs/"+song+".wav").c_str(), false);
 		};
 	};
 
@@ -352,14 +456,14 @@ namespace ve {
 
 		struct TempoChange
 		{
-			int atMicro;	// Time in micros at which to change
-			int newMicrosPerQuarterNote;
+			double atMicro;	// Time in micros at which to change
+			double newMicrosPerQuarterNote;
 		};
 
 		string trackName = "Lorem Ipsum";
-		int microsPerQuarterNote = 500'000;	// Default 120 bpm
-		int ticksPerQuarterNote;
-		int microsPerTick;
+		double microsPerQuarterNote = 500'000.0;	// Default 120 bpm
+		double ticksPerQuarterNote;
+		double microsPerTick;
 
 		bool isSmallEndian() {
 			unsigned int i = 1;
@@ -491,7 +595,7 @@ namespace ve {
 			}
 
 			// Current time since start of song in microseconds
-			int currentMicroTime;
+			double currentMicroTime;
 			int currentVolume = 63;		// Volume 0-127
 
 			// Calculate for default
@@ -501,7 +605,7 @@ namespace ve {
 			queue<TempoChange> tempoChangesProto = *(new queue<TempoChange>());;
 			queue<TempoChange> tempoChanges = *(new queue<TempoChange>());
 
-			notes.resize(16);
+			notesProto.resize(16);
 
 			// Track channel vector<queue<Note>>
 			// vector of currently sounding notes per channels
@@ -526,17 +630,40 @@ namespace ve {
 					// dtime in ticks
 					unsigned int dtimeTicks;
 					int vlqlen = getVariableLengthQuantityValue((char*)chunks[i], &dtimeTicks);
-					//printf("l: %X, dt: %X\n", length, dtimeTicks);
 
-					currentMicroTime += dtimeTicks * microsPerTick;
+					double dtimeTicksd = dtimeTicks;
 
-					// Check that the tempo is still the same
+					// Check that we dont pass a tempo change
+					double projectedNewMicroTime = currentMicroTime + dtimeTicks * microsPerTick;
+
 					while (!tempoChanges.empty() 
-						&& currentMicroTime > tempoChanges.front().atMicro) {
+						&& projectedNewMicroTime >= tempoChanges.front().atMicro) {
+						// We would skip past a tempo change
+
+						double microsToTempoChange = tempoChanges.front().atMicro - currentMicroTime;
+						double ticksToTempoChange = microsToTempoChange / microsPerTick;
+
+						printf("New tempo for t=%f at t=%f\n", tempoChanges.front().atMicro, currentMicroTime + microsToTempoChange);
 						// New tempo
 						microsPerTick = (tempoChanges.front().newMicrosPerQuarterNote / ticksPerQuarterNote);
 						tempoChanges.pop();
+
+						printf("ticksToTempoChange=%f\n", ticksToTempoChange);
+						dtimeTicksd -= ticksToTempoChange;
 					}
+
+
+					currentMicroTime += dtimeTicksd * microsPerTick;
+
+					// Check that the tempo is still the same
+					//while (!tempoChanges.empty() 
+					//	&& currentMicroTime >= tempoChanges.front().atMicro) {
+					//	printf("New tempo for t=%d at t=%d\n", tempoChanges.front().atMicro, currentMicroTime);
+					//	// New tempo
+					//	microsPerTick = (tempoChanges.front().newMicrosPerQuarterNote / ticksPerQuarterNote);
+					//	tempoChanges.pop();
+					//	
+					//}
 					
 
 					// Next bytes
@@ -575,18 +702,20 @@ namespace ve {
 								// Shift one byte right
 								tempo = tempo >> 8;
 
+								double tempod = tempo;
+
 								// Multiply tempo (seems to be necessary, but tempochanges still fuck up
 								// Possibly different tempos per channel..
-								tempo *= (1000.0/SPEED_CORRECTION);
+								tempod *= (1000.0/SPEED_CORRECTION);
 
-								microsPerQuarterNote = tempo;
+								microsPerQuarterNote = tempod;
 								//printf("tempo: %X\n", (int)microsPerQuarterNote);
 
 								// Change current tempo
 								microsPerTick = (microsPerQuarterNote / ticksPerQuarterNote);
 
 								// Record change for other tracks
-								tempoChangesProto.push({ currentMicroTime, (int)tempo });
+								tempoChangesProto.push({ currentMicroTime, tempod });
 
 								break;
 							}
@@ -677,7 +806,7 @@ namespace ve {
 								note.duration = currentMicroTime - note.start;
 
 								// Put into notes on this channel
-								notes[channel].push(note);
+								notesProto[channel].push(note);
 								
 								break;
 							}

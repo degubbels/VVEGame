@@ -417,6 +417,12 @@ namespace vh {
 			descriptorWrites[i].pImageInfo = &maps[i][offset];
 		}
 
+		//VkDescriptorSetAllocateInfo descriptorSetAllocateInfo;
+		//descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		//descriptorSetAllocateInfo.descriptorPool = 
+
+		//vkAllocateDescriptorSets(device, );
+
 		vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 		return VK_SUCCESS;
 	}

@@ -579,7 +579,7 @@ namespace ve {
 			m_AvgEndedTime = vh::vhAverage(vh::vhTimeDuration(t_now), m_AvgEndedTime);
 
 			t_now = vh::vhTimeNow();
-			m_pRenderer->drawOverlay();			//draw overlay in the subrenderer
+			m_pRenderer->drawOverlay();			//draw overlay in the subrenderer		
 			m_AvgDrawOvlTime = vh::vhAverage(vh::vhTimeDuration(t_now), m_AvgDrawOvlTime);
 
 			//----------------------------------------------------------------------------------

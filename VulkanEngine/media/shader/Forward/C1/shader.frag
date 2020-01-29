@@ -13,5 +13,6 @@ layout(set = 2, binding = 0) uniform sampler2D shadowMap;
 
 
 void main() {
-    outColor = fragColor;
+    //outColor = fragColor;
+    outColor = vec4(0,0,1,1);
 }
