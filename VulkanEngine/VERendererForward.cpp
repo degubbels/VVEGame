@@ -85,6 +85,8 @@ namespace ve {
 		vh::vhRenderCreateRenderPass( m_device, m_swapChainImageFormat, m_depthMap->m_format, VK_ATTACHMENT_LOAD_OP_CLEAR, &m_renderPassClear);
 		vh::vhRenderCreateRenderPass( m_device, m_swapChainImageFormat, m_depthMap->m_format, VK_ATTACHMENT_LOAD_OP_LOAD,  &m_renderPassLoad);
 
+		vh::vhRenderCreateRenderPass(m_device, m_swapChainImageFormat, m_depthMap->m_format, VK_ATTACHMENT_LOAD_OP_LOAD, &m_renderPassPostProcess);
+
 		//depth map for light pass
 		vh::vhBufCreateDepthResources(	m_device, m_vmaAllocator, m_graphicsQueue, m_commandPool, 
 										m_swapChainExtent, m_depthMap->m_format, 
@@ -211,6 +213,7 @@ namespace ve {
 		addSubrenderer(new VESubrenderFW_Skyplane());
 		addSubrenderer( new VESubrenderFW_Shadow());
 		addSubrenderer(new VESubrenderFW_Nuklear());
+		addSubrenderer(new VESubrenderFW_Glow());
 	}
 
 
@@ -226,6 +229,8 @@ namespace ve {
 
 		vkDestroyRenderPass(m_device, m_renderPassClear, nullptr);
 		vkDestroyRenderPass(m_device, m_renderPassLoad, nullptr);
+
+		vkDestroyRenderPass(m_device, m_renderPassPostProcess, nullptr);
 
 		for (auto imageView : m_swapChainImageViews) {
 			vkDestroyImageView(m_device, imageView, nullptr);
@@ -300,6 +305,8 @@ namespace ve {
 		vh::vhRenderCreateRenderPass( m_device, m_swapChainImageFormat, m_depthMap->m_format, VK_ATTACHMENT_LOAD_OP_CLEAR, &m_renderPassClear);
 		vh::vhRenderCreateRenderPass(m_device, m_swapChainImageFormat, m_depthMap->m_format, VK_ATTACHMENT_LOAD_OP_LOAD, &m_renderPassLoad);
 
+		vh::vhRenderCreateRenderPass(m_device, m_swapChainImageFormat, m_depthMap->m_format, VK_ATTACHMENT_LOAD_OP_LOAD, &m_renderPassPostProcess);
+
 		vh::vhBufCreateDepthResources(	m_device, m_vmaAllocator, m_graphicsQueue, m_commandPool, m_swapChainExtent,
 										m_depthMap->m_format, &m_depthMap->m_image, &m_depthMap->m_deviceAllocation, &m_depthMap->m_imageInfo.imageView);
 
@@ -319,6 +326,7 @@ namespace ve {
 	void VERendererForward::createSyncObjects() {
 		m_imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT); //for wait for the next swap chain image
 		m_renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT); //for wait for render finished
+		m_postProcessSemaphores.resize(MAX_FRAMES_IN_FLIGHT); //for wait for render finished
 		m_inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);		   //for wait for at least one image in the swap chain
 
 		VkSemaphoreCreateInfo semaphoreInfo = {};
@@ -332,6 +340,7 @@ namespace ve {
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			if (vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]) != VK_SUCCESS ||
 				vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]) != VK_SUCCESS ||
+				vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_postProcessSemaphores[i]) != VK_SUCCESS ||
 				vkCreateFence(m_device, &fenceInfo, nullptr, &m_inFlightFences[i]) != VK_SUCCESS ) {
 				assert(false);
 				exit(1);
@@ -457,6 +466,19 @@ namespace ve {
 			m_AvgCmdLightTime = vh::vhAverage( vh::vhTimeDuration(t_now), m_AvgCmdLightTime );
 		}
 
+		// Do postprocessing pass
+
+		//std::vector<VkDescriptorSet> empty = {};
+		//std::vector<ve::VESubrender*> subrender = { m_subrenderPostProcess };
+
+		//int numPass = getSceneManagerPointer()->getLights().size();
+
+		//auto future = tp->add(&VERendererForward::recordRenderpass, this, &m_renderPassPostProcess, subrender,
+		//	&m_swapChainFramebuffers[m_imageIndex],
+		//	m_imageIndex, numPass, pCamera, getSceneManagerPointer()->getLights()[0], empty);
+
+		//m_secondaryBuffersFutures[m_imageIndex].push_back(std::move(future));
+
 		//------------------------------------------------------------------------------------------
 		//wait for all threads to finish and copy secondary command buffers into the vector
 
@@ -505,11 +527,41 @@ namespace ve {
 
 			clearValuesLight.clear();		//since we blend the images onto each other, do not clear them for passes 2 and further
 		}
+
+		((VESubrenderFW_Glow*)m_subrenderPostProcess)->bindPipeline(m_commandBuffers[m_imageIndex]);
+		((VESubrenderFW_Glow*)m_subrenderPostProcess)->setDynamicPipelineState(m_commandBuffers[m_imageIndex], 0);
+
+
+		// Bind descriptor set to get image as input
+		//((VESubrenderFW_Glow*)m_subrenderPostProcess)->bindDescriptorSetsPerFrame(m_commandBuffers[m_imageIndex], m_imageIndex, pCamera, getSceneManagerPointer()->getLights()[0], m_descriptorSetsShadow);
+
+		// Bind image as textures
+		//((VESubrenderFW_Glow*)m_subrenderPostProcess)->bindDescriptorSetImage(m_commandBuffers[m_imageIndex], m_imageIndex, m_swapChainFramebuffers[m_imageIndex]);
+
+
+		////VESceneNode;
+		////VEEntity* imageEntity = &((VEEntity)(*(getSceneManagerPointer()->getSceneNode("testEntity"))));
+		//((VESubrenderFW_Glow*)m_subrenderPostProcess)->bindDescriptorSetsPerEntity(m_commandBuffers[m_imageIndex], m_imageIndex, e1);
+
+		// Post processing pass
+		vh::vhRenderBeginRenderPass(m_commandBuffers[m_imageIndex], m_renderPassPostProcess,
+			m_swapChainFramebuffers[m_imageIndex], clearValuesLight, m_swapChainExtent, VK_SUBPASS_CONTENTS_INLINE);
+
+		// Try the inline
+		vkCmdDraw(m_commandBuffers[m_imageIndex], 3, 1, 0, 0);
+		
+
+		vkCmdEndRenderPass(m_commandBuffers[m_imageIndex]);
+
 		m_AvgRecordTime = vh::vhAverage(vh::vhTimeDuration(t_start), m_AvgRecordTime);
 
 		vkEndCommandBuffer(m_commandBuffers[m_imageIndex]);
 
-		m_overlaySemaphores[m_currentFrame] = m_renderFinishedSemaphores[m_currentFrame];
+
+		// No idea if this is right
+		m_postProcessSemaphores[m_currentFrame] = m_renderFinishedSemaphores[m_currentFrame];
+
+		m_overlaySemaphores[m_currentFrame] = m_postProcessSemaphores[m_currentFrame];
 
 
 		//remember the last recorded entities, for incremental recording
@@ -677,9 +729,21 @@ namespace ve {
 			clearValuesLight.clear();		//since we blend the images onto each other, do not clear them for passes 2 and further
 		}
 
+
+		// Post processing pass
+		vh::vhRenderBeginRenderPass(m_commandBuffers[m_imageIndex], m_renderPassPostProcess,
+			m_swapChainFramebuffers[m_imageIndex], clearValuesLight, m_swapChainExtent, VK_SUBPASS_CONTENTS_INLINE);
+
+		// Try the inline
+		//vkCmdDraw(m_commandBuffers[m_imageIndex], 3, 1, 0, 0);
+		printf("pp pass prim buff draw\n");
+
+		vkCmdEndRenderPass(m_commandBuffers[m_imageIndex]);
+
+
 		vkEndCommandBuffer(m_commandBuffers[m_imageIndex]);
 
-		m_overlaySemaphores[m_currentFrame] = m_renderFinishedSemaphores[m_currentFrame];
+		m_overlaySemaphores[m_currentFrame] = m_postProcessSemaphores[m_currentFrame];
 
 	}
 
@@ -741,6 +805,13 @@ namespace ve {
 		m_subrenderOverlay->prepareDraw();
 	}
 
+	/**
+	* \brief Prepare to create postprocess, e.g. initialize the next frame
+	*/
+	void VERendererForward::preparePostProcess() {
+		if (m_subrenderPostProcess == nullptr) return;
+		m_subrenderPostProcess->prepareDraw();
+	}
 
 	/**
 	* \brief Draw the overlay into the current frame buffer
@@ -748,7 +819,18 @@ namespace ve {
 	void VERendererForward::drawOverlay() {
 		if (m_subrenderOverlay == nullptr) return;
 
-		m_overlaySemaphores[m_currentFrame] = m_subrenderOverlay->draw( m_imageIndex, m_renderFinishedSemaphores[m_currentFrame]);
+		m_overlaySemaphores[m_currentFrame] = m_subrenderOverlay->draw( m_imageIndex, m_postProcessSemaphores[m_currentFrame]);
+	}
+
+	/**
+	* \brief Draw the overlay into the current frame buffer
+	*/
+	void VERendererForward::drawPostProcess() {
+		if (m_subrenderPostProcess == nullptr) return;
+
+		printf("draw Post Process");
+		// TODO check what this semaphone business is about
+		m_postProcessSemaphores[m_currentFrame] = m_subrenderPostProcess->draw(m_imageIndex, m_renderFinishedSemaphores[m_currentFrame]);
 	}
 
 

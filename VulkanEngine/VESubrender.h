@@ -32,7 +32,8 @@ namespace ve {
 			VE_SUBRENDERER_CLASS_BACKGROUND,					///<Background, draw only once
 			VE_SUBRENDERER_CLASS_OBJECT,						///<Object, draw once for each light
 			VE_SUBRENDERER_CLASS_SHADOW,						///<Shadow renderer
-			VE_SUBRENDERER_CLASS_OVERLAY						///<GUI overlay
+			VE_SUBRENDERER_CLASS_OVERLAY,						///<GUI overlay
+			VE_SUBRENDERER_CLASS_POSTPROCESS
 		};
 
 		/**

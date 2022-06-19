@@ -30,6 +30,7 @@
 #include "VESubrenderFW_DN.h"
 #include "VESubrenderFW_Nuklear.h"
 #include "VESubrenderFW_Shadow.h"
+#include "VESubrenderFW_Glow.h"
 #include "VERenderer.h"
 #include "VERendererForward.h"
 

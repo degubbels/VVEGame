@@ -139,12 +139,31 @@ namespace ve {
 		virtual ~EventListenerGUI() {};
 	};
 
+	class EventListenerPostProcess : public VEEventListener {
+	protected:
+		
+		/**
+		*	Extra render step for glow effect
+		*/
+		virtual void onDrawOverlay(veEvent event) {
+			VESubrenderFW_Nuklear* pSubrender = (VESubrenderFW_Nuklear*)getRendererPointer()->getOverlay();
+			if (pSubrender == nullptr) return;
+		}
 
-	static std::default_random_engine e{ 12345 };					//Für Zufallszahlen
-	static std::uniform_real_distribution<> d{ -10.0f, 10.0f };		//Für Zufallszahlen
+	public:
+		///Constructor of class EventListenerGUI
+		EventListenerPostProcess(std::string name) : VEEventListener(name) { };
+
+		///Destructor of class EventListenerGUI
+		virtual ~EventListenerPostProcess() {};
+	};
+
+
+	static std::default_random_engine e{ 12345 };					//Fï¿½r Zufallszahlen
+	static std::uniform_real_distribution<> d{ -10.0f, 10.0f };		//Fï¿½r Zufallszahlen
 
 	//
-	// Überprüfen, ob die Kamera die Kiste berührt
+	// ï¿½berprï¿½fen, ob die Kamera die Kiste berï¿½hrt
 	//
 	class EventListenerCollision : public VEEventListener {
 	protected:
@@ -386,6 +405,7 @@ namespace ve {
 
 			registerEventListener(new EventListenerCollision("Collision"), { veEvent::VE_EVENT_FRAME_STARTED });
 			registerEventListener(new EventListenerGUI("GUI"), { veEvent::VE_EVENT_DRAW_OVERLAY});
+			registerEventListener(new EventListenerPostProcess("Glow"), { veEvent::VE_EVENT_DRAW_POSTPROCESS });
 			registerEventListener(new EventListenerFrame("Frame"), { veEvent::VE_EVENT_FRAME_STARTED });
 		};
 		
@@ -530,7 +550,7 @@ namespace ve {
 			if (format != 1)
 			{
 				// Invalid format
-				printf("INVALID FORMAT, only 1 is accepted");
+				printf("INVALID FORMAT, only 1 is accepted\n");
 				return;
 			}
 

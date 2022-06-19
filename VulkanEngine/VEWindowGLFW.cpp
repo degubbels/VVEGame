@@ -20,9 +20,10 @@ namespace ve {
 	*
 	*/
 	void VEWindowGLFW::initWindow( int WIDTH, int HEIGHT) {
+
 		glfwInit();
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		m_window = glfwCreateWindow(WIDTH, HEIGHT, "Vienna Vulkan Engine", nullptr, nullptr);
+		m_window = glfwCreateWindow(glfwGetVideoMode(glfwGetPrimaryMonitor())->width, glfwGetVideoMode(glfwGetPrimaryMonitor())->height, "Vienna Vulkan Engine", glfwGetPrimaryMonitor(), nullptr);
 		glfwSetWindowUserPointer(m_window, this);
 
 		//set callbacks

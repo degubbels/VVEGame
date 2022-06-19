@@ -322,6 +322,9 @@ namespace vh {
 	VkResult vhPipeCreateGraphicsPipeline(	VkDevice device, std::vector<std::string> shaderFileNames,
 											VkExtent2D swapChainExtent, VkPipelineLayout pipelineLayout, VkRenderPass renderPass,
 											std::vector<VkDynamicState> dynamicStates, VkPipeline *graphicsPipeline);
+	VkResult vhPipeCreateGraphicsPostProcessPipeline(VkDevice device, std::vector<std::string> shaderFileNames,
+		VkExtent2D swapChainExtent, VkPipelineLayout pipelineLayout, VkRenderPass renderPass,
+		std::vector<VkDynamicState> dynamicStates, VkPipeline* graphicsPipeline);
 	VkResult vhPipeCreateGraphicsShadowPipeline(VkDevice device, std::string verShaderFilename,
 												VkExtent2D shadowMapExtent, VkPipelineLayout pipelineLayout,
 												VkRenderPass renderPass, VkPipeline *graphicsPipeline);

@@ -61,6 +61,7 @@ namespace ve {
 		std::vector<VESubrender*> m_subrenderers;				///<Subrenderers for lit objects
 		VESubrender *			  m_subrenderShadow=nullptr;	///<Pointer to the shadow subrenderer
 		VESubrender *			  m_subrenderOverlay = nullptr;	///<Pointer to the overlay subrenderer
+		VESubrender *			  m_subrenderPostProcess = nullptr;	///<Pointer to the postprocess subrenderer
 
 		///Initialize the base class
 		virtual void initRenderer() {};
@@ -77,6 +78,10 @@ namespace ve {
 		virtual void prepareOverlay() {};
 		///Draw the overlay (GUI)
 		virtual void drawOverlay() {};
+		//Prepare Post processing
+		virtual void preparePostProcess() {};
+		///Draw post processing
+		virtual void drawPostProcess() {};
 		///Present the newl drawn frame
 		virtual void presentFrame() {};
 		///Recreate the swap chain
@@ -113,6 +118,7 @@ namespace ve {
 		virtual VkImage					getSwapChainImage() { return m_swapChainImages[m_imageIndex]; };
 		///\returns the overlay (GUI) subrenderer
 		virtual VESubrender *			getOverlay() { return m_subrenderOverlay; };
+		virtual VESubrender*			getPostProcess() { return m_subrenderPostProcess; };
 		virtual void					addEntityToSubrenderer(VEEntity *pEntity);
 		virtual void					removeEntityFromSubrenderers(VEEntity *pEntity);
 	};
